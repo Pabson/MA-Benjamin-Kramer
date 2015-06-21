@@ -1,0 +1,95 @@
+%
+% Fehler entdeckt?
+% Sinnvolle Erweiterung gefunden?
+% --> Mail an horst.schirmeier@tu-dortmund.de
+%
+
+\input{header}
+
+\begin{document}
+%\parindent0mm
+
+% Get rid of those annoying 'destination with the same identifier
+% (name{page.4}) has been already used, duplicate ignored' warnings in
+% larger documents
+\hypersetup{pageanchor=false}
+
+\input{titel}
+\newpage
+
+\thispagestyle{empty}
+\null
+\newpage
+
+\input{erklaerung}
+\newpage
+
+\thispagestyle{empty}
+\null
+\newpage
+
+\input{abstract}
+\newpage
+
+\thispagestyle{empty}
+\null
+\newpage
+
+\hypersetup{pageanchor=true}
+
+\setcounter{page}{1}
+\pagenumbering{roman}
+
+\def\thesection{}
+\tableofcontents
+\cleardoublepage
+\def\thesection{\thechapter.\arabic{section}}
+
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+% Kapitel
+\input chapters/introduction
+\input chapters/background
+\input chapters/implementation
+\input chapters/evaluation
+\input chapters/conclusions
+
+% Literaturverzeichnis
+\bibliographystyle{unsrtdin}
+\bibliography{literatur}
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliography}
+\nocite{*}
+
+% Abbildungsverzeichnis
+\listoffigures
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Figures}
+
+% Tabellenverzeichnis
+\begingroup
+\let\clearpage\relax
+\listoftables
+\endgroup
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Tables}
+
+% Listingverzeichnis
+\lstlistoflistings
+\phantomsection
+\addcontentsline{toc}{chapter}{Listings}
+
+% Index
+%\newpage
+%\phantomsection
+%\addcontentsline{toc}{chapter}{Index}
+%\printindex
+
+% Anhang
+% \newpage
+% \setcounter{page}{1}
+% \pagenumbering{Roman}
+% \appendix
+
+\end{document}

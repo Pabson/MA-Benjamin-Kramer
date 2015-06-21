@@ -1,0 +1,105 @@
+\documentclass[pdftex,a4paper,12pt,twoside,ngerman,openright,abstracton]{scrreprt} % Verwendung von KOMA-Script
+
+\usepackage{lmodern}			% Schriftart
+%\usepackage{textcomp}			% weitere Symbole
+\usepackage[T1]{fontenc}		% Umlaute in PDF, aber Probleme bei ß
+%\usepackage[latin1]{inputenc}		% LaTeX-Dateien sind in latin1 codiert
+\usepackage[utf8]{inputenc}		% LaTeX-Dateien sind in UTF-8 codiert
+
+%\usepackage[ngerman]{babel}		% neue deutsche Trennung
+
+\usepackage[pdftex]{graphicx}		% PNG, JPG, PDF Bilder
+%\usepackage{verbatim}			% Ausgabe von LaTeX-Quelltext
+\usepackage{listings}			% Paket fuer Quellcode-Listings
+\lstset{language=C++,
+        showstringspaces=false,
+        frame=L,
+        tabsize=2,
+        morekeywords={aspect,advice,slice,pointcut},
+        aboveskip=15pt,
+        belowskip=15pt}
+\usepackage{url}			% Links mit \url{http://...}
+\usepackage[clearempty]{titlesec}	% erweiterte Kontrolle ueber Ueberschriftformatierung
+\usepackage{booktabs}			% fuer brauchbare Tabellen
+%\usepackage{multirow}			% fuer Tabellenfelder, die sich ueber mehrere Zeilen/Spalten erstrecken
+\usepackage{fancyhdr}			% erweiterte Kontrolle ueber Kopf-/Fusszeilen
+
+\usepackage{pgfplots}
+% Deaktiviert für TeXlive 2012
+%\pgfplotsset{compat=1.8}
+\usepackage{pgfplotstable}
+\usetikzlibrary{arrows,patterns,shapes,trees}
+\usepackage{microtype}
+\usepackage[all]{nowidow}
+\usepackage{attrib}
+
+\titleformat{\paragraph}[hang]{\normalfont\bfseries}{}{0pt}{}
+\setcounter{secnumdepth}{4}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancypagestyle{plain}{%
+\fancyhf{}
+%\fancyhead[L]{\slshape{\leftmark}}
+%\fancyhead[R]{\slshape{\thesection}}
+\fancyfoot[L]{}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.0pt}
+}
+\fancyhead[EL]{\slshape{\leftmark}}
+\fancyhead[ER]{\slshape{\thesection}}
+\fancyhead[OL]{\slshape{\thesection}}
+\fancyhead[OR]{\slshape{\leftmark}}
+\fancyfoot[EL]{\thepage}
+\fancyfoot[ER]{}
+\fancyfoot[OL]{}
+\fancyfoot[OR]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\MakeUppercase{#1}}}
+
+%\hyphenation{}
+
+\setlength{\headheight}{15mm}	% legt Höhe des Leerraumes fest, der am oberen Seitenrand für Kopfzeile reserviert wird 
+\setlength{\headsep}{10mm}	% legt den Abstand zwischen der Kopfzeile und dem Rumpf der Seite fest
+
+\usepackage[
+        pdftex,
+%        a4paper,                      % Option is no longer used
+        pdfauthor={Benjamin Kramer},
+        pdftitle={Efficient Scans on Modern Hardware}
+        pdfsubject={Master's Thesis},
+        pdfkeywords={Scan, SIMD, BitWeaving},
+        breaklinks,
+        colorlinks,
+        linkcolor=black,
+        urlcolor=blue,
+        citecolor=black
+]{hyperref}
+
+% Abkuerzungen richtig formatieren
+\usepackage{xspace}
+\newcommand{\vgl}{vgl.\@\xspace}
+\newcommand{\zB}{z.\nolinebreak[4]\,\nolinebreak[4]B.\@\xspace}
+\newcommand{\bzw}{bzw.\@\xspace}
+\newcommand{\dahe}{d.\nolinebreak[4]\,h.\nolinebreak[4]\@\xspace}
+\newcommand{\etc}{etc.\@\xspace}
+\newcommand{\evtl}{evtl.\@\xspace}
+\newcommand{\ggf}{ggf.\@\xspace}
+\newcommand{\bzgl}{bzgl.\@\xspace}
+\newcommand{\so}{s.\nolinebreak[4]\,\nolinebreak[4]o.\@\xspace}
+\newcommand{\iA}{i.\nolinebreak[4]\,\nolinebreak[4]A.\@\xspace}
+\newcommand{\sa}{s.\nolinebreak[4]\,\nolinebreak[4]a.\@\xspace}
+\newcommand{\su}{s.\nolinebreak[4]\,\nolinebreak[4]u.\@\xspace}
+\newcommand{\ua}{u.\nolinebreak[4]\,\nolinebreak[4]a.\@\xspace}
+\newcommand{\og}{o.\nolinebreak[4]\,\nolinebreak[4]g.\@\xspace}
+\newcommand{\oBdA}{o.\nolinebreak[4]\,\nolinebreak[4]B.\nolinebreak[4]\,d.\nolinebreak[4]\,A.\@\xspace}
+\newcommand{\OBdA}{O.\nolinebreak[4]\,\nolinebreak[4]B.\nolinebreak[4]\,d.\nolinebreak[4]\,A.\@\xspace}
+\newcommand{\bspw}{bspw.\@\xspace}
+\newcommand{\zT}{z.\nolinebreak[4]\,\nolinebreak[4]T.\@\xspace}
+\newcommand{\ca}{ca.\@\xspace}
+
+%\setlength{\parindent}{0mm}		% Einrückung 1. Zeile eines Absatzes
+
+%\makeindex
