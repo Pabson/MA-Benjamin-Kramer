@@ -118,6 +118,7 @@ position sixteen as seen in figure~\ref{fig:earlypruningprobabilities}.
   width=0.8*\textwidth,
   xlabel=Bit Position (b),
   ylabel=Early Pruning Probability,
+  yticklabel=\pgfmathparse{100*\tick}\pgfmathprintnumber{\pgfmathresult}\,\%,
   xmin=0, xmax=32,
   ymin=0, ymax=1,
   legend entries={\bwv, \bs},
@@ -196,7 +197,7 @@ also applied. This can be extremely effective for conjunctive predicates with
 very low selectivity or disjunctive predicates with very high selectivity as
 large parts of the later columns can be pruned away.  The order in which the
 columns are scanned is now also important, a query optimizer could decide on the
-evaluation order based on its selectivity information. 
+evaluation order based on its selectivity information.
 
 Intra-column pruning also applies to scan algorithms that do not generally
 support early pruning, such as \simdscan{}.
@@ -249,3 +250,54 @@ columns}
 \end{figure}
 
 \section{Block-wise Scanning}
+
+The output of a scan as performed by \bwv{} and \bs{} is a bit vector with one
+bit for every value in the input. Depending on the result of the predicate the
+bit is either set or not set. Traditionally a column is scanned in its entirety,
+the result bit vector is written to memory and the scan proceeds to the next
+column. This means that an extra bit per value has to be written to memory for
+the intermediate results which is not needed for the end result. To reduce
+bandwidth the columns are now partitioned into fixed-size blocks. After a block
+is scanned, the bit vector is kept in cache and the algorithm proceeds scanning
+the next column. This is repeated for all columns, the final result is written
+and the scan advances to the next set of blocks.
+
+The bus between the processor and main memory is not capable of full duplex
+operation so any reduction in write bandwidth counts directly towards the total
+bandwidth. The reduction is particularly significant for small bandwidths, for
+example for a four-bit scan of two columns the total bandwidth would be ten
+bits, eight read and two written. Block-wise scanning reduces this to nine
+bits, a $10\,\%$ reduction. Figure~\ref{fig:blockwisesavings} shows reductions
+for scans over four and sixteen columns, for simplicity all columns are of the
+same bit width.
+
+\begin{figure}[h] \center
+\begin{tikzpicture} \begin{axis}[
+  grid,
+  width=0.8*\textwidth,
+  height=0.4*\textwidth,
+  xlabel=Bit Width,
+  ylabel=Bandwidth Savings,
+  yticklabel=\pgfmathparse{100*\tick}\pgfmathprintnumber{\pgfmathresult}\,\%,
+  xmin=0, xmax=32,
+  ymin=0, ymax=.5,
+  legend entries={4 Columns, 16 Columns},
+  legend style={at={(0.95,0.95)},anchor=north east},
+  xtick={0,4,8,12,16,20,24,28,32}
+]
+\addplot+[black, mark=x, domain=1:32, samples=32] {3/((x+1)*4)};
+\addplot+[black, mark=+, dashed, domain=1:32, samples=32] {15/((x+1)*16)};
+\end{axis}
+\end{tikzpicture}
+\caption{Potential bandwidth savings through block-wise scanning}
+\label{fig:blockwisesavings}
+\end{figure}
+
+The potential downside for large column counts is that it can destroy the
+regular consecutive access pattern of the memory. Modern processors are
+optimized to recognize this pattern and pre-fetch following accesses. Since
+this is the reason why column scans are fast a significant performance hit will
+be seen if the pre-fetching stops working due to changed access patterns.
+
+The block-wise technique works for all kinds of scan algorithms, including
+\simdscan{}, \bwv{} and \bs{}.
