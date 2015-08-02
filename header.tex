@@ -24,11 +24,14 @@
 %\usepackage{multirow}			% fuer Tabellenfelder, die sich ueber mehrere Zeilen/Spalten erstrecken
 \usepackage{fancyhdr}			% erweiterte Kontrolle ueber Kopf-/Fusszeilen
 
+\usepackage[section]{algorithm}                       % Floating-Umgebung für Algorithmen
+\usepackage[noend]{algpseudocode}                                  % Pseudocode für Algorithmen
+
 \usepackage{pgfplots}
 % Deaktiviert für TeXlive 2012
 %\pgfplotsset{compat=1.8}
 \usepackage{pgfplotstable}
-\usetikzlibrary{arrows,patterns,shapes,trees}
+\usetikzlibrary{arrows,patterns,shapes,trees,matrix}
 \usepackage{microtype}
 \usepackage[all]{nowidow}
 \usepackage{attrib}
@@ -99,6 +102,11 @@
 \newcommand{\bspw}{bspw.\@\xspace}
 \newcommand{\zT}{z.\nolinebreak[4]\,\nolinebreak[4]T.\@\xspace}
 \newcommand{\ca}{ca.\@\xspace}
+
+% Nuetzliche Macros
+\newcommand{\bwv}{\emph{BitWeaving/V}}
+\newcommand{\bs}{\emph{ByteSlice}}
+\newcommand{\simdscan}{\emph{SIMD-Scan}}
 
 %\setlength{\parindent}{0mm}		% Einrückung 1. Zeile eines Absatzes
 
