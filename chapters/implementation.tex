@@ -1,1 +1,40 @@
 \chapter{Implementation}
+
+In this chapter a benchmarking framework is introduced that allows comparing the
+three implementations of a scan
+
+\begin{itemize}
+  \item \simdscan{} SAP proprietary using AVX~2
+  \item \bwv{} custom implementation using AVX~2
+  \item \bs{} custom implementation using AVX~2
+\end{itemize}
+
+\section{Benchmark Design}
+
+\section{AVX~2 \bwv{} Implementation}
+
+\begin{algorithm}[h]
+\begin{algorithmic}[1]
+  \Procedure{splatBit}{$w$, $b$}
+  \State $w \gets w << (31-b)$ \Comment{move bit $b$ into the most significant position}
+  \State $w \gets w >> 31$ \Comment{arithmetic shift right}
+  \State \Return \_mm256\_set1\_epi32($w$) \Comment{return splat vector}
+  \EndProcedure
+\end{algorithmic}
+\caption{Duplicate bit number $b$ from a 32 bit integer over a
+full 256 bit vector}
+\label{algo:splatbit}
+\end{algorithm}
+
+\section{AVX~2 \bs{} Implementation}
+
+\begin{algorithm}[h]
+\begin{algorithmic}[1]
+  \Procedure{splatByte}{$w$, $b$}
+  \State $w \gets w >> (b * 8)$ \Comment{move byte $b$ into the least significant position}
+  \State \Return \_mm256\_set1\_epi8($w$) \Comment{return splat vector}
+  \EndProcedure
+\end{algorithmic}
+\caption{Duplicate byte number $b$ from a 32 bit integer over a full 256 bit vector}
+\label{algo:splatbyte}
+\end{algorithm}

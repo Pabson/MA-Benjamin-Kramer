@@ -174,9 +174,13 @@ bit equal to the value processed (algorithm~\ref{algo:between}).
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
   \Procedure{IsBetween}{$a$, $b$, $c$}
+    \State isGreater $\gets$ false
+    \State isLess $\gets$ false
     \For {$i \gets n-1$ to $0$}
-      \If {$a_i \ne b_i$ and $a_i \ne c_i$}
-        \State \Return $a_i > b_i$ and $a_i < c_i$
+      \State isGreater $\gets$ isGreater \textbf{or} $a_i > b_i$
+      \State isLess $\gets$ isLess \textbf{or} $a_i < c_i$
+      \If {$a_i \ne b_i$ \textbf{and} $a_i \ne c_i$}
+        \State \Return isGreater \textbf{and} isLess
       \EndIf
     \EndFor
     \State \Return false
