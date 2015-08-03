@@ -11,6 +11,73 @@ three implementations of a scan
 
 \section{Benchmark Design}
 
+The benchmark code is based on the code used to drive the benchmark
+in~\cite{AVX2-Scan}. It contains the infrastructure to execute scans using
+SAP's \simdscan{} and provides integration with Intel's \emph{Performance
+Counter Monitor} (PCM) to gather data from the various performance counters in
+the CPU core. It also contains code to run and validate a range predicate on
+a chunk of memory and storing the result as a bit vector, which could be
+partially reused.
+
+It was upgraded to use the latest available version of \simdscan{} from HANA
+which contains additional optimizations over those described in the paper.
+Support for benchmarking \bwv{} and \bs{} was added, including a new
+benchmarking mode for unpacking data from the vertical layout.
+
+\begin{description}
+\item[range scan to bit vector]
+  A column of uniformly distributed random 32 bit integers is generated and
+  brought into the representation needed for the scanning algorithm under a
+  given bit width. A range predicate of the form $0 \le x < max$ is created,
+  where $max$ is chosen based on the selectivity, e.g.  a selectivity of
+  $50\,\%$ with eight-bit values would result in the predicate $0 \le x < 128$.
+  The scan is executed once and compared with a scalar version of the algorithm
+  to ensure correctness, both algorithms produce a bit vector result. Then the
+  scan is performed three times under performance counter supervision and the
+  result is reported.
+
+  This is repeated for a range of selectivities from $100\,\%$ to $0\,\%$ and
+  for all bit widths from $1$ to $32$ for \simdscan{} and \bwv{}, for \bs{} only
+  8, 16, 24 and 32 bits are used. The size of a column was fixed at $2^{25}$
+  items.
+
+\item[equality scan to bit vector]
+  This mode is very similar to the range scan but uses a predicate of the form
+  $x = c$, where $c$ is a random constant. Since the selectivity cannot be
+  enforced via the predicate the input data is altered to contain $c$ at random
+  positions under a uniform distribution. The number of $c$s in the result is
+  chosen based on the selectivity. Otherwise the scan is carried out using the
+  same methods as the range scan.
+
+\item[multi-column scan]
+  To measure the impact of block-wise scanning a multi-column mode was added
+  that partitions the randomly generated input data chunk into multiple
+  columns. On those columns the predicates described above are used. Columns
+  can be scanned in its entirety (block size is infinite) or with smaller
+  block sizes. The results are combined with a logical and operation.
+
+  It turned out that $2^{25}$ items were insufficient to completely remove
+  caching effects from the results so the number of items was later raised to
+  $2^{30}$ items for all columns combined.
+
+\item[packing]
+  This benchmarking mode generates another chunk of 32 bit integers which are
+  then brought into the format used by the scan algorithm. For \simdscan{}
+  packing (and unpacking) is performed using the FastPFOR library by D. Lemire
+  et al\footnote{\url{https://github.com/lemire/FastPFor}}, \bwv{} and \bs{} use
+  custom packing routines. The runtime of the packing is measured with PCM.
+
+  The packing is executed for all bit widths from 1 to 32. For \bs{} zero
+  padding is added for cases not evenly divisible by eight. Not the entire
+  column is unpacked but only slices. The benchmark tests multiple slice sizes
+  from $256$ items to $2^{25}$ items.
+
+\item[unpacking]
+  Same as packing, but in this case integers are unpacked from the
+  scan-specific representation into an array of 32 bit integers. Otherwise the
+  configuration is identical to the packing benchmark.
+\end{description}
+
 \section{AVX~2 \bwv{} Implementation}
 
 \begin{algorithm}[h]
