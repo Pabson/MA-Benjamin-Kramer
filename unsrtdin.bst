@@ -689,7 +689,7 @@ FUNCTION {format.edition.or.date}
                 }
               if$
              }
-             { "\,Version:\,"
+             { "\,"
                format.date *
              }
            if$

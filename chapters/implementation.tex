@@ -14,10 +14,10 @@ three implementations of a scan
 The benchmark code is based on the code used to drive the benchmark
 in~\cite{AVX2-Scan}. It contains the infrastructure to execute scans using
 SAP's \simdscan{} and provides integration with Intel's \emph{Performance
-Counter Monitor} (PCM) to gather data from the various performance counters in
-the CPU core. It also contains code to run and validate a range predicate on
-a chunk of memory and storing the result as a bit vector, which could be
-partially reused.
+Counter Monitor} (PCM)~\cite{intelpcm} to gather data from the various
+performance counters in the CPU core. It also contains code to run and validate
+a range predicate on a chunk of memory and storing the result as a bit vector,
+which could be partially reused.
 
 It was upgraded to use the latest available version of \simdscan{} from HANA
 which contains additional optimizations over those described in the paper.
@@ -64,7 +64,7 @@ benchmarking mode for unpacking data from the vertical layout.
   This benchmarking mode generates another chunk of 32 bit integers which are
   then brought into the format used by the scan algorithm. For \simdscan{}
   packing (and unpacking) is performed using the FastPFOR library by D. Lemire
-  et al\footnote{\url{https://github.com/lemire/FastPFor}}, \bwv{} and \bs{} use
+  et al~\cite{fastpfor}, \bwv{} and \bs{} use
   custom packing routines. The runtime of the packing is measured with PCM.
 
   The packing is executed for all bit widths from 1 to 32. For \bs{} zero
