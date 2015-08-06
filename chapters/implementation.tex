@@ -80,6 +80,15 @@ benchmarking mode for unpacking data from the vertical layout.
 
 \section{AVX~2 \bwv{} Implementation}
 
+To have a fair comparison a clean-room implementation of the \bwv{} scan
+algorithm was implemented in C++ using AVX~2 compiler intrinsics. Implementing
+the scan itself was rather straight forward and only minor deviations from the
+suggested implementation in the paper were made. The most significant change is
+that the values that replicated bits of the reference constants over a full
+vector were computed on demand using algorithm~\ref{algo:splatbit}. This did not
+change the runtime of the scan but potentially saves resources in the already
+congested load path.
+
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
   \Procedure{splatBit}{$w$, $b$}
@@ -93,7 +102,40 @@ full 256 bit vector}
 \label{algo:splatbit}
 \end{algorithm}
 
+The most complex part of the implementation was designing a fast way to unpack
+and pack the input data into the format required by the \bwv{} scan. For packing
+the \texttt{movmskps} instruction was used combined with vector shifts. This
+processes eight 32 bit integers at the same time but is still slow as a lot of
+memory is touched. Since there is no reverse operation of \texttt{movmskps} in
+the AVX~2 instruction set unpacking was implemented by replicating the bits of a
+single value over a full vector and using shifts and masking.
+
 \section{AVX~2 \bs{} Implementation}
+
+In contrast to the \bwv{} scan the \bs{} turned out to be trickier to implement
+due to limitations in the AVX~2 instruction set that were not described in the
+\bs{} paper. The implementation relies on unsigned integer comparisons; AVX~2
+only supplies signed versions. To turn the signed versions into unsigned
+compares all the sign bits had to be flipped as illustrated in
+algorithm~\ref{algo:cmpunsigned}. This adds more instructions to the main scan
+loop than was anticipated earlier.
+
+\begin{algorithm}[h]
+\begin{algorithmic}[1]
+  \Procedure{unsignedCompare}{bits, reference, bytenumber}
+  \State bits $\gets$ \_mm256\_xor\_si256(Bits, \_mm256\_set1\_epi8(0x80));
+  \State reference $\gets$ reference \^{} 0x80808080
+  \State reference $\gets$ splatByte(reference, bytenumber)
+  \State \Return \_mm256\_cmpgt\_epi8(bits, reference)
+  \EndProcedure
+\end{algorithmic}
+\caption{Extract a reference byte and do an unsigned comparison with a vector}
+\label{algo:cmpunsigned}
+\end{algorithm}
+
+The byte extraction and duplication is also implemented differently from the
+paper. It uses the same method as the \bwv{} implementation but adapted to bytes
+instead of bits (algorithm~\ref{algo:splatbyte}.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -105,3 +147,13 @@ full 256 bit vector}
 \caption{Duplicate byte number $b$ from a 32 bit integer over a full 256 bit vector}
 \label{algo:splatbyte}
 \end{algorithm}
+
+Packing and unpacking into the \bs{} representation can be done extremely
+quickly on AVX~2. The basic idea for packing is to load a full 256 bit vector
+containing eight 32 bit integers. Then use vector shuffle instructions to
+rearrange the bytes of those integers to be clustered together, that means all
+most significant bytes are in the first 64 bits of the vector. Then up to four
+64 bit integers are extracted from that vector and stored at the corresponding
+positions in the output buffer. This only touches five memory locations, reading
+from one and storing to four at the maximum bit width of 32 bits. All accesses
+are sequential so it should perform very well on modern hardware.
