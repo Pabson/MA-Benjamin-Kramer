@@ -1,1 +1,109 @@
 \chapter{Background}
+
+\section{Scans}
+
+\section{SIMD}
+
+The idea behind SIMD (Single Instruction/Multiple Data) architectures as
+firstly classified by Flynn \cite{flynnsimd}, is to use a single instructions
+stream to process many different values at once. The earliest members of this
+class of architectures were the vector processors of the 1970's such as the
+Cray 1 or the Earth Simulator, fastest supercomputer in the world in the year
+2002 \cite{hennessyarch}. In a vector processor the size of a register is not
+static but the number of elements in a register can be configured at runtime up
+to a certain limit, the Cray 1 had a limit of 64 values in a register, each of
+the values 64 bits wide. When arithmetic instructions are executed with such a
+vector register in its operand the individual values can be processed in parallel
+as far as resources permit. So processing a 64-element vector can take
+significant less than 64 cycles. Load operations typically gather values that
+can be scattered throughout memory into a single registers and load operations
+have to disperse the values back into memory. By this approach a vector
+instruction set has dramatically fewer instructions than an architecture that
+operates on a single value at a time. This frees up instruction decoding
+resources that can be repurposed to increase throughput elsewhere.
+
+However, classic vector architectures have not become the most prevalent model
+for modern processor architectures, obvious reasons being:
+\begin{itemize}
+\item Superscalar out-of-order processors already provide parallelism by
+automatically identifying independent instructions and executing them
+simultaneously.
+\item Gathering loads and scattering stores are not a good fit for caches and
+memory organized in fixed-size blocks where at least a full block is fetched or
+stored. This would waste a significant amount of memory bandwidth and cache
+memory.
+\item The large variable-length registers add additional state to the processor.
+\end{itemize}
+
+In the end a fairly limited subset of a vector architecture has found its way
+into virtually any instruction set but the most reduced for embedded
+applications. These so called multimedia instructions only support a fixed-size
+registers which can usually be overlaid with different data types, for example
+registers containing 128 bits can be used as either four 32-bit values or eight
+16 bit values. This means there are many different instructions compared to the
+approach taken by vector architectures. Scattering and gathering is usually not
+present or only in a limited form by loading values separated by a constant gap.
+Examples for this form of vector instructions are MMX, SSE and AVX on Intel
+CPUs, AltiVec on PowerPC or NEON on ARM processors.
+
+To understand why SIMD still provides an advantage over superscalar
+instruction-level parallelism the latency and throughput of normal instructions
+has to be taken into account. In table~\ref{tab:latencies} the latencies and
+throughput for loads and additions are shown. Now imagine a loop creating a sum
+over 32-bit values; requiring a load and an add. All instructions are fully
+pipelined so we can load two 32 bit integers and perform two additions per
+cycle, the full throughput is not achievable because we cannot load more than
+two values. Now we change the loop to work on 256 bit vectors, the load
+throughput does not change with size so we can load 16 32-bit integers per cycle
+and still perform 2 full adds, adding all 16 integers. In theory we now
+increased the throughput eightfold. In practice the performance will be bound be
+bound by memory latency in this simple example though, unless the number of
+arithmetic instructions is increased.
+
+\begin{table}\center
+\begin{tabular}{c|c|c}
+Instruction & Latency & Throughput\\
+\hline
+Scalar load & (depends on cache) & 2 per cycle\\
+Scalar add & 1 cycle & 4 per cycle\\
+%Scalar mul & 3 cycles & 1 per cycle\\
+Vector load & (depends on cache) & 2 per cycle\\
+Vector add & 1 cycle & 2 per cycle\\
+%Vector mul & 5 cycles & 1 per cycle
+\end{tabular}
+\caption{Instruction latencies and throughput on Intel Haswell}
+\label{tab:latencies}
+\end{table}
+
+\section{SIMD on Modern Hardware}
+
+The focus of this section lies on the current 4th generation Intel Core
+architecture. The basic observations are also applicable to any other current
+architecture or SIMD instruction set, but the performance characteristics may
+differ widely.
+
+Intel has a long history supplying multimedia instruction sets:
+\begin{description}
+\item[MMX] The Multi Media eXtension made the start in 1997, supplying integer
+instructions on 64 bit registers shared with the existing floating point unit.
+\item[SSE] The Streaming SIMD Extension added a fully independent 128 bit
+register set in 1999. SSE only supported floating point operations, SSE~2 added
+the integer counterparts in 2001. SSE was extended with many different
+instructions often catered towards operations commonly found in video codecs.
+\item[AVX] The Advanced Vector eXtensions extend the registers introduced in
+SSE to a 256 bits. As with SSE, AVX provided only floating point operations and
+AVX~2 added integer instructions.
+\end{description}
+
+Since AVX~2 is currently the latest available set of SIMD instructions on Intel
+hardware it will be the focus of this thesis. It provides 16 256-bit registers
+and integer operations on 32 8-bit, 16 16-bit, 8 32-bit or 4 64-bit values at a
+time.
+
+As a preliminary it is vital to understand how caches are organized on a
+current Intel CPU. Since for a scan data will almost always be loaded freshly
+from DRAM cache levels are ignored here. The cache on any recent Intel CPU is
+partitioned into cache lines of 64 bytes. This means that when reading data
+from memory it does not matter if 1 byte or 32 bytes, which is the maximum load
+size in AVX~2, are read at a time and the whole cache line will be fetched from
+DRAM.
