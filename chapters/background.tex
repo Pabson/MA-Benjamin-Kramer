@@ -91,8 +91,17 @@ register set in 1999. SSE only supported floating point operations, SSE~2 added
 the integer counterparts in 2001. SSE was extended with many different
 instructions often catered towards operations commonly found in video codecs.
 \item[AVX] The Advanced Vector eXtensions extend the registers introduced in
-SSE to a 256 bits. As with SSE, AVX provided only floating point operations and
-AVX~2 added integer instructions.
+SSE to 256 bits. As with SSE, AVX provided only floating point operations and
+AVX~2 added integer instructions. AVX also provides new encodings for all
+existing SSE instructions using a three-operand form instead of the more
+restricted two-operand form used by SSE. AVX instructions generally behave as
+if working on two independent 128 bit registers instead of one large 256 bit
+register, this makes operations that combine bits from the lower 128 bits with
+bits from the upper 128 bits of the register more complex.
+\item[AVX-512] AVX 512 is a new instruction set extending the AVX registers to
+512 bits. While it contains interesting new operations that could be very
+useful for implementing scans it was not available in general purpose CPUs at
+the time this thesis was written.
 \end{description}
 
 Since AVX~2 is currently the latest available set of SIMD instructions on Intel
@@ -107,3 +116,68 @@ partitioned into cache lines of 64 bytes. This means that when reading data
 from memory it does not matter if 1 byte or 32 bytes, which is the maximum load
 size in AVX~2, are read at a time and the whole cache line will be fetched from
 DRAM.
+
+A scan over an array of integers of size 8, 16, 32 or 64 bits can be
+easily implemented in SSE or AVX as illustrated in
+figure~\ref{fig:simplecomparesse}. Here a greater than predicate is executed,
+the \texttt{pcmpgt} instruction takes two vectors and sets the corresponding
+element in a result vector to either all ones if the element in the first
+vector is greater than the element in the second vector. Otherwise it is set to
+zero. To generate a bit vector from this result the \texttt{movmsk} instruction
+is used which takes the most significant bit of every element in a vector and
+sets the bit with the same number in a simple integer. In the example the
+result of \texttt{movmsk} is $00111101$ in binary or $3d$ in hexadecimal.
+
+\begin{figure}\center
+\begin{tikzpicture}[node distance=2cm]
+
+\def\elemwidth{4ex};
+\def\dotswidth{4ex};
+\def\labelsepa{0.2cm};
+\tikzset{simd element/.style={
+    rectangle,
+    draw,
+    inner xsep=0.1ex,
+    font=\footnotesize\ttfamily,
+    minimum width=\elemwidth,
+    minimum height=\heightof{A[0]}+0.666em
+}};
+
+\foreach \val [count=\i] in {04, 03, 06, 0f, 0a, 08, 02, 0c} {
+    \node[simd element] (src1\i) [
+        xshift=(\i-1)*\elemwidth, outer sep=0] {\val};
+}
+
+\foreach \val [count=\i] in {04, 04, 04, 04, 04, 04, 04, 04} {
+    \node[simd element] (src2\i) [
+        xshift=(10+\i-1)*\elemwidth, outer sep=0] {\val};
+}
+
+\foreach \val [count=\i] in {00, 00, ff, ff, ff, ff, 00, ff} {
+    \node[simd element, below of=src16] (src3\i) [
+        xshift=(\i-1)*\elemwidth, outer sep=0] {\val};
+}
+
+\node[label, below of=src14] (pcmp) {pcmpgt};
+
+\foreach \i in {1,...,8} {
+    \path[->, color=gray] (src1\i.south) edge (src3\i.north);
+    \path[->, dashed] (src2\i.south) edge (src3\i.north);
+}
+
+\node[simd element, below of=src34] (src4) [xshift=\elemwidth/2, outer sep=0] {3d};
+
+\foreach \i in {1,...,8} {
+    \path[->] (src3\i.south) edge (src4);
+}
+
+\node[label, below of=pcmp] (movmsk) {movmsk};
+\end{tikzpicture}
+\caption{Comparing two vectors and generating a bit vector in SSE}
+\label{fig:simplecomparesse}
+\end{figure}
+
+\section{\simdscan{}}
+
+\simdscan{} \cite{SIMD-Scan} takes the basic idea shown in
+figure~\ref{fig:simplecomparesse} and extends it to arbitrary bit widths.
