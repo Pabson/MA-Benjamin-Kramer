@@ -114,11 +114,11 @@ single value over a full vector and using shifts and masking.
 
 In contrast to the \bwv{} scan the \bs{} turned out to be trickier to implement
 due to limitations in the AVX~2 instruction set that were not described in the
-\bs{} paper. The implementation relies on unsigned integer comparisons; AVX~2
+\bs{} paper. The implementation relies on unsigned integer comparisons but AVX~2
 only supplies signed versions. To turn the signed versions into unsigned
-compares all the sign bits had to be flipped as illustrated in
+compares all sign bits are flipped as illustrated in
 algorithm~\ref{algo:cmpunsigned}. This adds more instructions to the main scan
-loop than was anticipated earlier.
+loop than earlier anticipated.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
