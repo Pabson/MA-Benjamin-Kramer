@@ -180,4 +180,60 @@ result of \texttt{movmsk} is $00111101$ in binary or $3d$ in hexadecimal.
 \section{\simdscan{}}
 
 \simdscan{} \cite{SIMD-Scan} takes the basic idea shown in
-figure~\ref{fig:simplecomparesse} and extends it to arbitrary bit widths.
+figure~\ref{fig:simplecomparesse} and extends it to arbitrary bit widths. The
+methodology is comparable to a normal compression format where data is first
+decompressed in one step and then processed in another. The compression format
+stores a set of fixed-size integers without any padding. For decompression those
+individual integers have to distributed over the lanes of a SIMD vector. The
+main achievement of \simdscan{} is an efficient decompression method for every
+bit width from one to 32 bits. Due to limitations in Intel's vector extensions
+the performance of the bit case can vary though, with cases 8, 16 and 32 bit
+being trivial on SSE hardware as decompression is equivalent to a simple copy
+here. Other bit widths require varying amounts of arithmetic and logic operations
+to decompress. In practice every bit width is implemented manually to get an
+optimal sequence of instructions in a tight loop.
+
+\simdscan{} has greatly benefited from new instruction set extensions such as
+AVX~2 \cite{AVX2-Scan} and is likely to benefit from AVX~512 too as more general
+shuffle and compare instructions have been added, reducing the amount of
+instructions needed for some bit widths.
+
+% TODO: Bilder, tiefe.
+
+\section{\emph{BitWeaving}}
+
+\emph{BitWeaving} \cite{BitWeaving} is a new framework to further accelerate
+scans by rearranging the bits scanned in memory for better performance. It comes
+in two variants, a horizontal version (\emph{BitWeaving/H}) and a vertical
+version (\bwv{}).
+
+The horizontal form is based on ``SIMD within a register'' (SWAR) as first
+described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
+contiguously, similar to the format \simdscan{} uses except that a stop bit is
+added between every element, adding memory overhead. To do a scan on this data
+it is not decompressed but the arithmetic primitives used to do a comparison are
+decomposed and directly applied to the compressed data.
+
+As \emph{BitWeaving/H} provides no significant advantage over \simdscan{} but
+adds additional memory overhead it was not taken into consideration. Knuth
+suggests in \cite{SWAR} that the additional bit can be avoided by adding more
+arithmetic operations, it is however unlikely that this will make
+\emph{BitWeaving/H} faster than \simdscan{}, the contrary is more likely.
+\emph{BitWeaving/H} also has to read all the data for a scan.
+
+% TODO: Bild.
+
+Not reading all the data is the primary advantage of the other flavor of
+\emph{BitWeaving}, \bwv{}. This format uses a vertical format first suggested in
+\cite{oneill}. The individual bits of a word in the column are no longer stored
+together but distributed over many words. In memory this means that the most
+significant bits of all words are stored first, followed by the second-most
+significant bits and so on. Scans are still implemented using a SWAR method on a
+bit-wise level. The difference is now that for a comparison operation the scan
+of a word is aborted after mismatch occurs for the first time. Any additional
+bits do not have to be read anymore.
+
+To derive a performance advantage out of the memory that is not read anymore the
+column is partitioned into a fixed amount of groups.
+
+\section{ByteSlice}

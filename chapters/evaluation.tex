@@ -1,1 +1,24 @@
 \chapter{Evaluation}
+
+After laying down the theoretical analysis of the scan algorithms and providing
+an efficient implementation it is time to verify whether the expectations hold
+up in reality. This chapter does so with a focus on six basic questions.
+
+\begin{enumerate}
+  \item Can the early pruning in \bwv{} beat the performance of \simdscan{}
+despite of branching overhead?
+  \item How large is this branching overhead?
+  \item Is the early pruning probability difference of \bwv{} and \bs{} visible in practice?
+  \item What is the impact of predicate selectivity on early pruning?
+  \item How much time does it take to bring data in the formats required by the scanning algorithms.
+  \item Are there visible improvements due to the bandwidth reduction of block-wise scanning?
+\end{enumerate}
+
+\section{Benchmark Setup}
+
+All benchmarks were performed on a dual-CPU Intel Xeon E5-2697 v3 machine. This
+Haswell setup had 56 physical and logical cores but all benchmarks only measure
+single-core performance. Memory was supplied by eight banks with eight
+gigabytes of DDR4 RAM each, running at 1067\,MHz. On the software side Ubuntu
+14.04 was used and GCC 4.8 compiled the benchmark code, except for \simdscan{}
+which was using a binary compiled with ICC.
