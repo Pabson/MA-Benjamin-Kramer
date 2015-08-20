@@ -18,7 +18,151 @@ despite of branching overhead?
 
 All benchmarks were performed on a dual-CPU Intel Xeon E5-2697 v3 machine. This
 Haswell setup had 56 physical and logical cores but all benchmarks only measure
-single-core performance. Memory was supplied by eight banks with eight
-gigabytes of DDR4 RAM each, running at 1067\,MHz. On the software side Ubuntu
-14.04 was used and GCC 4.8 compiled the benchmark code, except for \simdscan{}
-which was using a binary compiled with ICC.
+single-core performance. The CPU has a last-level cache size of 35 megabytes.
+Memory was supplied by eight banks with eight gigabytes of DDR4 RAM each,
+running at 1067\,MHz. On the software side Ubuntu 14.04 was used and GCC 4.8
+compiled the benchmark code, except for \simdscan{} which was using a binary
+compiled with ICC.
+
+\section{Comparing \simdscan{} to \bwv{}}
+
+The first and most important evaluation result will be a direct comparison
+between \simdscan{} and \bwv{}. As seen in figure~\ref{fig:eval:bwvsimdb8}. In
+this configuration early pruning was performed after reading 4 bits as
+suggested in~\cite{BitWeaving}.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\simdscan{} vs. \bwv{},
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\simdscan{}, \bwv{}},
+    legend to name=leg:bwvsimdb8,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_range_noblock_b4.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Read from DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BWV_range_noblock_b4.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvsimdb8}
+\end{center}
+\caption{Runtime of a range predicate with \simdscan{} and \bwv{}, sum of eight
+runs over $2^{25}$ random integers. \bwv{} group size is four.}
+\label{fig:eval:bwvsimdb8}
+\end{figure}
+
+As described earlier the benchmark was run with multiple selectivities, which
+are represented as a stack of markers in this chart. Since selectivity has
+virtually no impact on the runtime of \simdscan{} the variance between the
+selectivities can be interpreted as an indicator for the noise level. The read
+bandwidth used by \simdscan{} is approximately 11 gigabytes per second and
+scales linearly over all bit widths with only a few exceptions. 11 gigabytes
+per second matches the bandwidth available to a single core on the Haswell
+processor used. This was verified with a separate benchmark only touching every
+cache line once. Total bandwidth is significantly higher but can only made use
+of by utilizing multiple cores. The graph itself can be analyzed as four
+different parts.
+
+\begin{itemize}
+  \item Bit widths $0-8$: due to the large amount of last-level cache
+  available not all of the memory is read from DRAM but was kept in the cache
+  over multiple iterations. This skews the result, however there is virtually
+  no difference in scan performance between \simdscan{} and \bwv{}.
+  \item Bit widths $8-12$: as calculated earlier and visible in the memory
+  graph early pruning is not effective here. The overhead of the additional
+  branch is slowing down \bwv{} in comparison to \simdscan{}.
+  \item Bit widths $12-20$: Early pruning starts to become more effective and
+  less memory is loaded from DRAM. The early pruning overhead is clearly
+  visible and yields a slower runtime than \simdscan{}.
+  \item Bit width $20-32$: Early pruning is very effective and beats the
+  runtime of \simdscan{} with a growing margin.
+\end{itemize}
+
+All in all this benchmark shows that \bwv{} can beat \simdscan{}, but it is not
+always a clear win. It provides no advantage over \simdscan{} at low bit widths
+and is slower at medium bit widths. Only at relatively large bit widths early
+pruning can make up its own overhead.
+
+\section{Reducing the early pruning overhead}
+
+As seen in the last graphs there is a significant overhead in the area around
+16 bits when comparing \bwv{} with \simdscan{}. This overhead comes from the
+additional branching that has to be performed at every early pruning step. To
+reduce the amount of branching one possible tweak is to reduce the number of
+bits that are processed without early pruning. This diminishes the
+effectiveness of early pruning though. For the benchmark in
+figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
+8 or 16 bits processed.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\simdscan{} vs. \bwv{},
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\simdscan{}, \bwv{} B=4, \bwv{} B=8, \bwv{} B=16,},
+    legend to name=leg:bwvsimdbgroups,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b8.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b16.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Read from DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b8.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b16.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvsimdbgroups}
+\end{center}
+\caption{Runtime of a range predicate with \simdscan{} and \bwv{}, sum of eight
+runs over $2^{25}$ random integers. Varying group sizes.}
+\label{fig:eval:bwvsimdbgroups}
+\end{figure}
+
+As expected smaller group sizes work better with regard to the number of bytes
+read from DRAM as early pruning is a lot more effective. The impact on
+performance is very small though, the expected improvement due to fewer
+mispredicted branches is not visible. As the difference is very small a block
+size of eight was chosen for the following experiments, as it compares better
+to \bs{} which has an intrinsic group size of eight.
