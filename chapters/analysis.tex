@@ -92,11 +92,12 @@ be skipped a reduction in memory bandwidth (and thus scan performance) can be
 achieved. On the tested Intel hardware a cache line consists of 512 bits,
 meaning the theoretical worst case is off by a factor of two. For a uniform
 distribution of equal values the worst case selectivity for \bwv{} becomes
-$$E[S]=\frac{1}{512}\approx 0.2\,\%$$ for \bs{} it goes down to
-$$E[S]=\frac{1}{64}\approx 1.6\,\%$$ The reliance on cache line sizes also means
-that register size has no effect on the early pruning probability. Once the
-scan is limited by memory bandwidth increasing (or decreasing) the register
-width will not have any effect on scan performance.
+$$E[S]=\frac{1}{512}\approx 0.2\,\%$$ as every cache line contains bits of 512
+values. For \bs{} which only uses bytes and stores bits of 64 value per cache
+line  it goes down to $$E[S]=\frac{1}{64}\approx 1.6\,\%$$ The reliance on cache
+line sizes also means that register size has no effect on the early pruning
+probability. Once the scan is limited by memory bandwidth increasing (or
+decreasing) the register width will not have any effect on scan performance.
 
 \paragraph{Calculating the Early Pruning Probability For A Given Bit}
 
