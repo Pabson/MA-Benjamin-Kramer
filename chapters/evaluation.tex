@@ -170,3 +170,166 @@ to \bs{} which has an intrinsic group size of eight.
 \section{Comparing \bwv{} to \bs{}}
 
 \section{Comparing predicates and selectivity}
+
+So far only a range predicate was tested. For random data in a uniform
+distribution this has the very nice property of hitting the worst case very
+rarely. As a reminder, for the used predicate of the form $x\le y < z$ the worst
+case is triggered when $y$ is either equal to $x$ or $z$. So for the next
+benchmark this worst case will be investigated. For reasons of simplicity an
+equality predicate was used, but the observation also applies to any inequality
+or range predicate. Only 8, 16, 24 and 32 bits are evaluated because others are
+not directly supported by \bs{}. The results in runtime and DRAM reads are
+plotted in figure~\ref{fig:eval:equalbig}.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=4cm,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Runtime (ns)},
+    ymin=0,ymax=100000000,
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    %legend entries={\simdscan{}, \bwv{}, \bs{}},
+    legend to name=leg:equalbig,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/AVX2_equalbig.csv};
+\addlegendentry{\simdscan{}}
+% Horrible hack to populate the legend.
+\addplot+[color=red] coordinates {(8,-100)};
+\addlegendentry{\bwv{}}
+\addplot+[color=olive] coordinates {(8,-100)};
+\addlegendentry{\bs{}}
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=100000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=red,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_equalbig.csv};
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=100000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_equalbig.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Read from DRAM},
+    ymin=0,ymax=1200000000,
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/AVX2_equalbig.csv};
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=1200000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=red,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BWV_equalbig.csv};
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=1200000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_equalbig.csv};
+\end{axis}
+\end{tikzpicture}
+
+\ref*{leg:equalbig}
+\end{center}
+\caption{Runtime of an equality predicate with \simdscan{}, \bwv{} and \bs{},
+sum of eight runs over $2^{30}$ random integers. 32 different selectivities
+between $100\,\%$ and $0\,\%$.}
+\label{fig:eval:equalbig}
+\end{figure}
+
+\begin{itemize}
+  \item Early pruning is more effective for \bs{} than for \bwv{} but
+    performance tends to be slightly worse.
+  \item TODO
+\end{itemize}
+
+One important fact that is not represented in this graph is that for \bwv{} and
+\bs{} about half of the points are in the topmost position. This is shown in
+detail in figure~\ref{fig:eval:equalbigselectivity} which shows the results
+against the selectivity on a logarithmic scale.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\pgfplotsset{select coords between index/.style 2 args={
+    x filter/.code={
+        \ifnum\coordindex<#1\def\pgfmathresult{}\fi
+        \ifnum\coordindex>#2\def\pgfmathresult{}\fi
+    }
+}}
+\begin{center}
+
+\begin{tikzpicture} \begin{semilogxaxis}[
+    ylabel={Runtime (ns)},
+    ymin=0,ymax=100000000,
+    xlabel={Selectivity},
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\simdscan{}, \bwv{}, \bs{}},
+    legend to name=leg:equalbigselectivity,
+    grid
+]
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=6,filter discard warning=false] {data/AVX2_equalbig.csv};
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=6,filter discard warning=false] {data/BWV_equalbig.csv};
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=6,filter discard warning=false] {data/BS_equalbig.csv};
+\end{semilogxaxis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{semilogxaxis}[
+    ylabel={Bytes Read from DRAM},
+    ymin=0,ymax=1200000000,
+    xlabel={Selectivity},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=8,filter discard warning=false] {data/AVX2_equalbig.csv};
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=8,filter discard warning=false] {data/BWV_equalbig.csv};
+\addplot+ [select coords between index={0}{32}] table[header=false,col sep=semicolon, x index=5, y index=8,filter discard warning=false] {data/BS_equalbig.csv};
+\end{semilogxaxis}
+\end{tikzpicture}
+
+\ref*{leg:equalbigselectivity}
+\end{center}
+\caption{Different selectivities for \simdscan{}, \bwv{} and \bs{} for code
+width 32.}
+\label{fig:eval:equalbigselectivity}
+\end{figure}
