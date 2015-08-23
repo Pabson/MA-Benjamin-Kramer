@@ -333,3 +333,48 @@ against the selectivity on a logarithmic scale.
 width 32.}
 \label{fig:eval:equalbigselectivity}
 \end{figure}
+
+\section{Packing and Unpacking}
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title={Packing},
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\simdscan{}, \bwv{}, \bs{}},
+    legend to name=leg:packunpack,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/AVX2_pack.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_pack.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_pack.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    title={Unpacking},
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/AVX2_unpack.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_unpack.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_unpack.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:packunpack}
+\end{center}
+\caption{TODO}
+\label{fig:eval:packunpack}
+\end{figure}
