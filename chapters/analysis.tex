@@ -94,10 +94,11 @@ meaning the theoretical worst case is off by a factor of two. For a uniform
 distribution of equal values the worst case selectivity for \bwv{} becomes
 $$E[S]=\frac{1}{512}\approx 0.2\,\%$$ as every cache line contains bits of 512
 values. For \bs{} which only uses bytes and stores bits of 64 value per cache
-line  it goes down to $$E[S]=\frac{1}{64}\approx 1.6\,\%$$ The reliance on cache
-line sizes also means that register size has no effect on the early pruning
-probability. Once the scan is limited by memory bandwidth increasing (or
-decreasing) the register width will not have any effect on scan performance.
+line it goes down to $$E[S]=\frac{1}{64}\approx 1.6\,\%$$ As long as the cache
+line size is larger than the register size, the register size has no effect on
+the early pruning probability. As soon as the computation is fast enough so the
+scan is only limited by memory bandwidth further increases or decreases of the
+register size will not have any effect on scan performance.
 
 \paragraph{Calculating the Early Pruning Probability For A Given Bit}
 
@@ -107,11 +108,12 @@ probability of $50\,\%$ the probability that a given value is equal with the
 reference value up to bit $b$ is ${\left(\frac{1}{2}\right)}^b$,
 so the full probability that we skip a cache line when reading bit $b$ is
 $$P(b)={\left(1-{\left(\frac{1}{2}\right)}^b\right)}^{512}$$
-for \bwv{} and
+for \bwv{}~\cite{BitWeaving} and
 $$P(b)={\left(1-{\left(\frac{1}{2}\right)}^b\right)}^{64}$$
-for \bs{}. Both rapidly approach $100\,\%$ for high bit widths, with \bs{}
-having a huge advantage over \bwv{} at position eight and still being better at
-position sixteen as seen in figure~\ref{fig:earlypruningprobabilities}.
+for \bs{}~\cite{ByteSlice}. Both rapidly approach $100\,\%$ for high bit widths,
+with \bs{} having a huge advantage over \bwv{} at position eight and still being
+better at position sixteen as seen in
+figure~\ref{fig:earlypruningprobabilities}.
 
 \begin{figure}[h] \center
 \begin{tikzpicture} \begin{axis}[
@@ -162,15 +164,15 @@ reduces the amount of memory pruned away.
 \label{algo:less}
 \end{algorithm}
 
-For the other predicates $<,\le,>,\ge$ and \textsc{between} establishing the
-worst and best cases can be done in exactly the same fashion as for the
-equality and inequality predicates, they are triggered by exactly the same data.
-However, there is no direct link between the worst case and selectivity
-anymore. For $<,\le,>,\ge$ the worst case is hit when all data is
-equal to the reference constant as seen in algorithm~\ref{algo:less}. For
-\textsc{between} there is a slight difference as both boundaries have to be
-taken into account as the computation is only aborted when neither has a current
-bit equal to the value processed (algorithm~\ref{algo:between}).
+For the other predicates $<,\le,>,\ge$ and \textsc{between} the worst and best
+cases are basically the same as for equality and inequality predicates, they are
+triggered by exactly the same data.  However, there is no direct link between
+the worst case and selectivity anymore. For $<,\le,>,\ge$ the worst case is hit
+when all data is equal to the reference constant as seen in
+algorithm~\ref{algo:less}. For \textsc{between} there is a slight difference as
+both boundaries have to be taken into account as the computation is only aborted
+when neither has a current bit equal to the value processed
+(algorithm~\ref{algo:between}).
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -274,7 +276,9 @@ example for a four-bit scan of two columns the total bandwidth would be ten
 bits, eight read and two written. Block-wise scanning reduces this to nine
 bits, a $10\,\%$ reduction. Figure~\ref{fig:blockwisesavings} shows reductions
 for scans over four and sixteen columns, for simplicity all columns are of the
-same bit width.
+same bit width. The savings are calculated by dividing the saved bits by the
+total bit bandwidth without block-wise scanning, $\frac{c-1}{c(b+1)}$ where $c$
+is the number of columns and $b$ is the bit width.
 
 \begin{figure}[h] \center
 \begin{tikzpicture} \begin{axis}[
