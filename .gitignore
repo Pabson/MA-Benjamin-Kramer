@@ -14,20 +14,22 @@
 .DS_store
 # Files created by Texmaker
 *.aux
-*.synctex.gz
 *.bbl
+*.bcf
 *.blg
+*.fdb_latexmk
+*.fls
+*.lat
 *.loa
+*.lof
 *.log
+*.lol
+*.lot
+*.nav
 *.out
+*.run.xml
+*.synctex.gz
 *.thm
 *.toc
-*.nav
-*.lat
-*.lof
-*.lol
-*.fls
-*.fdb_latexmk
-*.lot
 
 MA-Benjamin-Kramer.pdf
