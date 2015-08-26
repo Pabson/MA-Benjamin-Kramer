@@ -200,6 +200,31 @@ instructions needed for some bit widths.
 
 % TODO: Bilder, tiefe.
 
+As will be shown in chapter~\ref{chapter:evaluation} the \simdscan{} is bound by
+memory bandwidth alone for almost any bit width when using AVX~2 on a modern
+CPU. On Intel hardware this is a fairly new behavior that was not observed using
+plain SSE \cite{AVX2-Scan} and required a lot of manual optimization. This also
+means that \simdscan{} already has the best possible performance when all bits
+of a column are read. There are two possible changes to improve this.
+
+\begin{itemize}
+  \item Using a more complex compression scheme such as PFOR~\cite{PFOR} which
+    tries to reduce the overall bit width by putting large numbers in a separate
+    memory area and providing a reference to this table in the column. This
+    still allows random access but requires a decoding step and trades
+    memory bandwidth for performance when scanning data containing many large
+    numbers.
+  \item Using a variable-length encoding such as Simple-8~\cite{Simple8} or
+    varint~\cite{varint} which store significantly fewer bits if an entry in the
+    column is small. This complicates random access and makes fully utilizing
+    SIMD harder because SIMD instructions as described earlier are usually only
+    provided for fixed-size integers.
+  \item Trying to abort the scan before all bits are read.
+\end{itemize}
+
+The following sections focus on exiting the scan early as this is most likely to
+have the lowest overhead of the three methods.
+
 \section{\emph{BitWeaving}}
 
 \emph{BitWeaving} \cite{BitWeaving} is a new framework to further accelerate
