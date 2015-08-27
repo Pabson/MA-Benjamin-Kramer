@@ -89,21 +89,33 @@ different parts.
   \item Bit widths $0-8$: due to the large amount of last-level cache
   available not all of the memory is read from DRAM but was kept in the cache
   over multiple iterations. This skews the result, however there is virtually
-  no difference in scan performance between \simdscan{} and \bwv{}.
+  no difference in scan performance between \simdscan{} and \bwv{}. Early
+  pruning can theoretically abort the scan after four or eight bits but the
+  probability calculated in chapter~\ref{chapter:analysis} is very low so no
+  effect is observed.
   \item Bit widths $8-12$: as calculated earlier and visible in the memory
-  graph early pruning is not effective here. The overhead of the additional
-  branch is slowing down \bwv{} in comparison to \simdscan{}.
+  graph early pruning is still not effective here. The overhead of the additional
+  branch is slowing down \bwv{} in comparison to \simdscan{} which does not have
+  any branching in its scan loop. \simdscan{} is the better scan algorithm for
+  these common bit widths.
   \item Bit widths $12-20$: Early pruning starts to become more effective and
   less memory is loaded from DRAM. The early pruning overhead is clearly
-  visible and yields a slower runtime than \simdscan{}.
+  visible and yields a slower runtime than \simdscan{} so its still preferable
+  over \bwv{}.
   \item Bit width $20-32$: Early pruning is very effective and beats the
-  runtime of \simdscan{} with a growing margin.
+  runtime of \simdscan{} with a growing margin. The performance curve is
+  entirely flat and will stay the same if the bit width is extended any further.
+  \bwv{} is the preferable algorithm for this kind of scan.
 \end{itemize}
 
 All in all this benchmark shows that \bwv{} can beat \simdscan{}, but it is not
 always a clear win. It provides no advantage over \simdscan{} at low bit widths
 and is slower at medium bit widths. Only at relatively large bit widths early
-pruning can make up its own overhead.
+pruning can make up its own overhead and provide an advantage that grows larger
+as the bit width gets larger. This contradicts the observations of the
+\bwv{} paper~\cite{BitWeaving} where \bwv{} is significantly faster than all
+other methods. It is very likely that a faulty implementation of \simdscan{} was
+used for those benchmarks as it is very competitive.
 
 \section{Reducing the early pruning overhead}
 
@@ -114,7 +126,7 @@ reduce the amount of branching one possible tweak is to reduce the number of
 bits that are processed without early pruning. This diminishes the
 effectiveness of early pruning though. For the benchmark in
 figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
-8 or 16 bits processed.
+8 or 16 bits processed. The selectivity for this benchmark was fixed at $50\,\%$.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
@@ -132,10 +144,10 @@ figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
     legend to name=leg:bwvsimdbgroups,
     grid
 ]
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/AVX2_range_noblock_b4.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b4.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b8.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b16.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b8.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b16.csv};
 \end{axis}
 \end{tikzpicture}
 
@@ -148,10 +160,10 @@ figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
     scaled ticks=false,
     grid
 ]
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/AVX2_range_noblock_b4.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b4.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b8.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{16}] {data/BWV_range_noblock_b16.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/AVX2_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b4.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b8.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8, each nth point=32, filter discard warning=false, unbounded coords=discard, skip rows between index={0}{2}] {data/BWV_range_noblock_b16.csv};
 \end{axis}
 \end{tikzpicture}
 \ref*{leg:bwvsimdbgroups}
@@ -164,9 +176,12 @@ runs over $2^{25}$ random integers. Varying group sizes.}
 As expected smaller group sizes work better with regard to the number of bytes
 read from DRAM as early pruning is a lot more effective. The impact on
 performance is very small though, the expected improvement due to fewer
-mispredicted branches is not visible. As the difference is very small a block
-size of eight was chosen for the following experiments, as it compares better
-to \bs{} which has an intrinsic group size of eight.
+mispredicted branches is not visible. Nullifying the overhead does not seem
+possible.
+
+As the difference is very small a block size of eight was chosen for the
+following experiments, as it compares better to \bs{} which has an intrinsic
+group size of eight due to processing values at the byte level.
 
 \section{Comparing \bwv{} to \bs{}}
 
@@ -271,21 +286,31 @@ plotted in figure~\ref{fig:eval:equalbig}.
 \ref*{leg:equalbig}
 \end{center}
 \caption{Runtime of an equality predicate with \simdscan{}, \bwv{} and \bs{},
-sum of eight runs over $2^{30}$ random integers. 32 different selectivities
+sum of eight runs over $2^{25}$ random integers. 32 different selectivities
 between $100\,\%$ and $0\,\%$.}
 \label{fig:eval:equalbig}
 \end{figure}
 
 \begin{itemize}
+  \item \simdscan{} is the base line. \bwv{} and \bs{} read at most as much data
+    as \simdscan{}. The performance represents the maximum amount of data one
+    CPU core can process at the given time, so any other algorithm can not be
+    faster unless it reads less data.
+  \item When the same amount of data is read the performance of \bwv{} tends to
+    be almost identical to \simdscan{}. On the one hand this equality predicate
+    does very little arithmetic work compared the range predicate shown earlier
+    on the other hand early pruning does not work well so the early exit branch
+    can be easily predicted by the hardware.
   \item Early pruning is more effective for \bs{} than for \bwv{} but
-    performance tends to be slightly worse.
-  \item TODO
+    performance tends to be slightly worse. The implementation of \bs{} is not
+    entirely memory bound like \simdscan{} and \bwv{} are.
 \end{itemize}
 
 One important fact that is not represented in this graph is that for \bwv{} and
 \bs{} about half of the points are in the topmost position. This is shown in
 detail in figure~\ref{fig:eval:equalbigselectivity} which shows the results
-against the selectivity on a logarithmic scale.
+against the selectivity on a logarithmic scale. The results are only shown for a
+bit width of 32 as this shows early pruning in action for both \bwv{} and \bs{}.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
@@ -335,7 +360,28 @@ width 32.}
 \label{fig:eval:equalbigselectivity}
 \end{figure}
 
+The graph clearly shows the early pruning patterns calculated in
+chapter~\ref{chapter:analysis}. The bit width of 32 bits is also rather large so
+early pruning can work decently here and the branch overhead does not penalize
+\bwv{} in comparison to \simdscan{}. For \bs{} the situation looks a bit
+different though as there are obvious deficiencies in performance here. It is
+unclear why there is a performance advantage over \bwv{} and \simdscan{} for
+very high selectivities.
+
 \section{Packing and Unpacking}
+
+Packing the data into the representation required by the scan algorithm and
+unpacking them for consumption are two operations that are often overlooked when
+measuring scan performance. While packing performance is usually done once for a
+column which is scanned many times, unpacking is necessary to materialize the
+results. This can be circumvented by keeping the data available in multiple
+formats, one optimized for scanning and another optimized for unpacking, but
+this obviously requires twice the amount of memory.
+Figure~\ref{fig:eval:packunpack} shows packing of 32 bit values into the scan
+representation of various sizes and the reverse, unpacking the scan
+representation back into 32 bit values. For \simdscan{} at bit width 32 both
+operations are equivalent to \texttt{memcpy}, performing a verbatim copy and not
+modifying the data at all.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
@@ -376,6 +422,24 @@ width 32.}
 \end{tikzpicture}
 \ref*{leg:packunpack}
 \end{center}
-\caption{TODO}
+\caption{Packing 32 bit values into \simdscan{}, \bwv{} and \bs{}
+representations and the reverse. 256 values were transformed at a time.}
 \label{fig:eval:packunpack}
 \end{figure}
+
+The most obvious issue is that \bwv{} is orders of magnitudes slower than the
+other two representations. This is due to the amount of arithmetic needed to
+extract and insert individual bits while manipulating fully bytes or more can be
+done much more efficiently with shifts and vector shuffles. It should also be
+noted that packing is more expensive than unpacking in this scenario.
+
+For \simdscan{} and \bs{} runtime is extremely close to the speed of memory as
+seen in the 32 bit case of packing. The difference in performance between the
+two is mostly due to the \bs{} packing algorithm making use of SIMD while the
+others were implemented using scalar 32 or 64 bit integers. There is still more
+potential for optimization here.
+
+In conclusion it is certainly feasible to use the in-memory representation of
+\simdscan{} or \bs{} as the storage format for both scanning and extraction of
+values, unpacking from \bwv{} is prohibitively expensive so its usage is
+restricted to being an index.
