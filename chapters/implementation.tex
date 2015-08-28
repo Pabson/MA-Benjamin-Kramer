@@ -110,6 +110,10 @@ memory is touched. Since there is no reverse operation of \texttt{movmskps} in
 the AVX~2 instruction set unpacking was implemented by replicating the bits of a
 single value over a full vector and using shifts and masking.
 
+Packing and unpacking is generally very slow for \bwv{} as unpacking a single
+value has to touch as many cache lines as there are bits in the value. This is a
+significant disadvantage in comparison with the other methods.
+
 \section{AVX~2 \bs{} Implementation}
 
 In contrast to the \bwv{} scan the \bs{} turned out to be trickier to implement
@@ -135,7 +139,7 @@ loop than earlier anticipated.
 
 The byte extraction and duplication is also implemented differently from the
 paper. It uses the same method as the \bwv{} implementation but adapted to bytes
-instead of bits (algorithm~\ref{algo:splatbyte}.
+instead of bits (algorithm~\ref{algo:splatbyte}).
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -157,3 +161,6 @@ most significant bytes are in the first 64 bits of the vector. Then up to four
 positions in the output buffer. This only touches five memory locations, reading
 from one and storing to four at the maximum bit width of 32 bits. All accesses
 are sequential so it should perform very well on modern hardware.
+
+For \bs{} unpacking and packing a single value only touches eight times fewer
+cache lines as \bwv{} does making the transformation process much faster.

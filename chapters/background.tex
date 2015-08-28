@@ -1,6 +1,15 @@
 \chapter{Background}
 
+\section{Memory}
+
 \section{Scans}
+
+One of the most basic primitives to build a database system is the scan. For a
+given table in the database the scan compares every row against a given
+predicate and returns which rows match that predicate. This is equivalent to a
+linear search over a block of memory, the runtime is $O(n)$.
+
+TODO: Column store
 
 \section{SIMD}
 
@@ -261,4 +270,4 @@ bits do not have to be read anymore.
 To derive a performance advantage out of the memory that is not read anymore the
 column is partitioned into a fixed amount of groups.
 
-\section{ByteSlice}
+\section{\bs{}}
