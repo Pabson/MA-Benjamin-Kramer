@@ -60,6 +60,12 @@ benchmarking mode for unpacking data from the vertical layout.
   caching effects from the results so the number of items was later raised to
   $2^{30}$ items for all columns combined.
 
+  Since a logical and is used to combine the results early pruning was not used
+  in between columns for this benchmark. Pruning between columns with an and
+  predicate becomes very sensitive to the selectivities of the individual
+  columns as they multiply from column to column, distorting the results per
+  column.
+
 \item[packing]
   This benchmarking mode generates another chunk of 32 bit integers which are
   then brought into the format used by the scan algorithm. For \simdscan{}

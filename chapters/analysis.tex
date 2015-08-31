@@ -311,3 +311,10 @@ be seen if the pre-fetching stops working due to changed access patterns.
 
 The block-wise technique works for all kinds of scan algorithms, including
 \simdscan{}, \bwv{} and \bs{}.
+
+Since \bwv{} with AVX~2 always processes 256 elements at a time it would be
+reasonable to pick 256 as the block size and keep the intermediate values in
+registers at all time. Since the \bwv{} implementation is limited by DRAM
+bandwidth and intermediate values will stay in cache unless the block size is
+very large this is unlikely to have a performance impact in comparison to other
+sizes though.

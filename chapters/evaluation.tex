@@ -445,3 +445,226 @@ values, unpacking from \bwv{} is prohibitively expensive so its usage is
 restricted to being an index.
 
 \section{Adding Block-Wise Scanning}
+
+The last part of this evaluation is measuring the impact of block-wise scanning
+on the used memory bandwidth, and thus performance. Five block sizes were
+evaluated, only \bwv{} results are shown here as \simdscan{} and \bs{} show
+exactly the same behavior.
+
+\begin{itemize}
+  \item Block size $1$. This is equivalent to a row-wise scan. One element is read
+    from the first column, compared and then the next column is processed before
+    eventually advancing to the next row. For this test a scalar loop was used
+    as the other methods have minimum block sizes because of their SIMD usage.
+  \item Block size $256$. This is the native width of \bwv{} using AVX~2.
+  \item Block size $1024$. Picked to see if using the native width has an
+    positive or negative impact.
+  \item Block size $2^{17}=131\,072$. This was used to emulate a database system
+    that divides its data into chunks of $100\,000$ elements. Rounded up to the
+    next power of 2.
+  \item Block size $\infty$. This is equivalent to scanning the entire column
+    before advancing to the next column.
+\end{itemize}
+
+Except for the infinite block size all intermediate bit vectors always fit in
+cache and since the bit vectors are permanently overwritten it is very unlikely
+for them to be evicted from cache.
+
+First a word on block size $1$. Tests showed that this method was not
+competitive at all with the other sizes because it inhibits using SIMD
+instructions. Testing showed a slow down of more than $10\times$. Using this
+method is not recommended for any type of scan.
+
+The next graph in figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
+and $1024$ with an infinite block size. There is a small performance benefit of
+this method but it is not very pronounced, as calculated in
+chapter~\ref{chapter:analysis}. What does not match the analysis is that the
+bit width has virtually no effect on the performance difference even though the
+percentage of saved memory bandwidth is much higher for small bit widths. This
+effect is most likely due to cache effects.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\bwv{} block-wise 4 column,
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\bwv{} 256, \bwv{} 1024, \bwv{} $\infty$},
+    legend to name=leg:bwvblocks4,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_256_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_1024_4col.csv};
+%\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_100000_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_inf_4col.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Written to DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_1024_4col.csv};
+%\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_inf_4col.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvblocks4}
+\end{center}
+\caption{Comparing different block sizes for four columns with \bwv{}}
+\label{fig:eval:bwvblocks4}
+\end{figure}
+
+Figure~\ref{fig:eval:bwvblocks16} shows the same scan but this time the data was
+distributed over 16 columns. This has a catastrophic effect on scan performance
+because the memory prefetching of the used Haswell CPU cannot cope with this
+many streams, effectively removing the performance advantage of sequential
+access. The amount of written data is much lower for this test case though, the
+amount of input data was the same overall but more of the results were
+intermediate ones compared to the four column case. The intermediate results
+fit in cache for small bit widths here leading to a curved graph for the
+infinite block size, this will not happen for larger data sets.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\bwv{} block-wise 16 column,
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\bwv{} 256, \bwv{} 1024, \bwv{} $\infty$},
+    legend to name=leg:bwvblocks16,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_256_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_1024_16col.csv};
+%\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_100000_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_inf_16col.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Written to DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_1024_16col.csv};
+%\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_inf_16col.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvblocks16}
+\end{center}
+\caption{Comparing different block sizes for sixteen columns with \bwv{}}
+\label{fig:eval:bwvblocks16}
+\end{figure}
+
+Once the prefetcher ceased to work there is also a visible advantage of using
+larger block sizes, in this case $1024$ performed significantly better than
+$256$ as there is some sequential access left that the CPU can recognize. This
+lead to the next test that uses a vastly larger block size of $2^{17}$ which is
+tested in figure~\ref{fig:eval:bwvblocks100k} with a larger data set.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\bwv{} block-wise with large block size,
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\bwv{} $2^{17}$ 4 cols, \bwv{} $2^{17}$ 16 cols, \bwv{} $\infty$ 4 cols},
+    legend to name=leg:bwvblocks100k,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_100000_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_big_100000_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_blocked_inf_4col.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Written to DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_4col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_16col.csv};
+\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_inf_4col.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvblocks100k}
+\end{center}
+\caption{Comparing \bwv{} at block size $2^{17}$}
+\label{fig:eval:bwvblocks100k}
+\end{figure}
+
+With a block size this large the prefetcher issue of smaller block sizes is
+completely avoided and we gain a small performance benefit by avoiding to write
+intermediate results into main memory. The result for one block only weighs
+$\frac{2^{17}}{8}=2^{14}$ bytes which easily fits into any cache on the
+processor.
+
+\section{Summary}
+
+Coming back to the questions posed in the introduction of this chapter we can
+now safely answer all of them.
+
+\begin{enumerate}
+  \item \emph{Can the early pruning in \bwv{} beat the performance of
+    \simdscan{} despite of branching overhead?} Yes, but not for all bit widths.
+    On the tested machine the branching overhead is largest around a bit width
+    of 16 and amortizes if the bit width gets larger. For bit widths around 32
+    bits \bwv{} has a significant advantage over \simdscan{}.
+  \item \emph{How large is this branching overhead?} Large enough to make \bwv{}
+    slower than \simdscan{} for some bit widths.
+  \item \emph{Is the early pruning probability difference of \bwv{} and \bs{}
+    visible in practice?} It is visible when measuring the amount of memory read
+    from DRAM but in this implementation it was not faster than \bwv{}. \bs{}
+    has other advantages over \bwv{} and it is not unlikely that \bs{} can gain
+    ground on \bwv{} on the next generation of Intel hardware or with a better
+    tuned implementation.
+  \item \emph{What is the impact of predicate selectivity on early pruning?} For
+    uniform random data there is virtually no impact for predicates containing
+    less-than or greater-than operations. For equality the selectivity directly
+    impacts early pruning and even at low selectivities early pruning is often
+    defeated entirely.
+  \item \emph{How much time does it take to bring data in the formats required
+    by the scanning algorithms.} Both \simdscan{} and \bs{} really shine in this
+    area. \bwv{} is orders of magnitudes slower, making it infeasible as the
+    primary representation; making it only usable as an index.
+  \item \emph{Are there visible improvements due to the bandwidth reduction of
+    block-wise scanning?} Yes. There is a small but visible effect. Making the
+    block size too small can regress performance though so a large block size is
+    better as long as the intermediate bit vectors comfortably fit in cache.
+\end{enumerate}
