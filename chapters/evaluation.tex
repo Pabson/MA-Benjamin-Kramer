@@ -11,9 +11,12 @@ despite of branching overhead?
   \item How large is this branching overhead?
   \item Is the early pruning probability difference of \bwv{} and \bs{} visible in practice?
   \item What is the impact of predicate selectivity on early pruning?
-  \item How much time does it take to bring data in the formats required by the scanning algorithms.
+  \item How much time does it take to bring data in the formats required by the scanning algorithms?
   \item Are there visible improvements due to the bandwidth reduction of block-wise scanning?
 \end{enumerate}
+
+This chapter will try to find answers to those questions and confirm those
+answers using benchmark results.
 
 \section{Benchmark Setup}
 
@@ -22,8 +25,12 @@ Haswell setup had 56 physical and logical cores but all benchmarks only measure
 single-core performance. The CPU has a last-level cache size of 35 megabytes.
 Memory was supplied by eight banks with eight gigabytes of DDR4 RAM each,
 running at 1067\,MHz. On the software side Ubuntu 14.04 was used and GCC 4.8
-compiled the benchmark code, except for \simdscan{} which was using a binary
-compiled with ICC.
+compiled the benchmark code, except for \simdscan{} which was using a
+precompiled object file compiled with ICC.
+
+All runtimes were recorded using C++11's
+\texttt{std::chrono::high\_resolution\_clock}, memory bandwidth to and from the
+DRAM controller was measured from the CPU performance counters using Intel PCM.
 
 \section{Comparing \simdscan{} to \bwv{}}
 
@@ -184,6 +191,69 @@ following experiments, as it compares better to \bs{} which has an intrinsic
 group size of eight due to processing values at the byte level.
 
 \section{Comparing \bwv{} to \bs{}}
+
+Figure~\ref{fig:eval:bwvbs} shows the same range predicate used for the
+comparison between \simdscan{} and \bwv{} on \bs{} and \bwv{}. Only bit widths
+supported by \bs{} without padding are shown as \bs{} performance for the bit
+widths in between is identical to the next higher bit width without padding. It
+can be clearly seen that \bs{} is not memory bound in this benchmark. Even
+though the pruning works better for case $24$ the runtime performance is much
+worse. The gap can be reduced by using a simpler predicate, for example in
+figure~\ref{fig:eval:equalbig} an equality predicate was used. While much
+narrower even this was not enough to eliminate the performance advantage of
+\bwv{} over \bs{}.
+
+\begin{figure}[h]
+\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\begin{center}
+\begin{tikzpicture} \begin{axis}[
+    title=\bwv{} vs. \bs{}{},
+    ylabel={Runtime (ns)},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    legend columns=-1,
+    legend entries={\bwv{}, \bs{}},
+    legend to name=leg:bwvbs,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_range_mini.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_range_mini.csv};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture} \begin{axis}[
+    ylabel={Bytes Read from DRAM},
+    ymin=0,%ymax=24000,
+    xlabel={Bit Width},
+    xmin=1,xmax=32,
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_range_mini.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BWV_range_mini.csv};
+\end{axis}
+\end{tikzpicture}
+\ref*{leg:bwvbs}
+\end{center}
+\caption{Runtime of a range predicate with \bwv{} and \bs{}, sum of eight
+runs over $2^{25}$ random integers. \bwv{} group size is eight.}
+\label{fig:eval:bwvbs}
+\end{figure}
+
+This benchmark contradicts the benchmarks seen in the \bs{} paper
+\cite{ByteSlice} where \bs{} is almost always faster than the vertical
+bit-packed format and \simdscan{}. It is likely that the same faulty
+implementation of \simdscan{} was used for this benchmark and a very simple
+predicate was used for \bs{}.
+
+It is also possible that this gap will be closed by the next CPU generation or
+more optimized predicate evaluation code.  \bs{} has other advantages, namely a
+higher pruning probability and very efficient packing and unpacking, which would
+make it highly preferable over \bwv{} if performance parity can be reached.
 
 \section{Comparing predicates and selectivity}
 
@@ -637,34 +707,38 @@ processor.
 
 \section{Summary}
 
-Coming back to the questions posed in the introduction of this chapter we can
-now safely answer all of them.
+Coming back to the questions posed in the introduction of this chapter, all of
+them can now be answered using the gathered benchmark data and the analysis that
+was done on that data.
 
 \begin{enumerate}
   \item \emph{Can the early pruning in \bwv{} beat the performance of
-    \simdscan{} despite of branching overhead?} Yes, but not for all bit widths.
-    On the tested machine the branching overhead is largest around a bit width
-    of 16 and amortizes if the bit width gets larger. For bit widths around 32
-    bits \bwv{} has a significant advantage over \simdscan{}.
-  \item \emph{How large is this branching overhead?} Large enough to make \bwv{}
-    slower than \simdscan{} for some bit widths.
+    \simdscan{} despite of branching overhead?}\\
+    Yes, but not for all bit widths.  On the tested machine the branching
+    overhead is largest around a bit width of 16 and amortizes if the bit width
+    gets larger. For bit widths around 32 bits \bwv{} has a significant advantage
+    over \simdscan{}.
+  \item \emph{How large is this branching overhead?}\\
+    Large enough to make \bwv{} slower than \simdscan{} for some bit widths.
   \item \emph{Is the early pruning probability difference of \bwv{} and \bs{}
-    visible in practice?} It is visible when measuring the amount of memory read
-    from DRAM but in this implementation it was not faster than \bwv{}. \bs{}
-    has other advantages over \bwv{} and it is not unlikely that \bs{} can gain
-    ground on \bwv{} on the next generation of Intel hardware or with a better
-    tuned implementation.
-  \item \emph{What is the impact of predicate selectivity on early pruning?} For
-    uniform random data there is virtually no impact for predicates containing
-    less-than or greater-than operations. For equality the selectivity directly
-    impacts early pruning and even at low selectivities early pruning is often
-    defeated entirely.
+    visible in practice?}\\
+    It is visible when measuring the amount of memory read from DRAM but in this
+    implementation it was not faster than \bwv{}. \bs{} has other advantages
+    over \bwv{} and it is not unlikely that \bs{} can gain ground on \bwv{} on
+    the next generation of Intel hardware or with a better tuned implementation.
+  \item \emph{What is the impact of predicate selectivity on early pruning?}\\
+    For uniform random data there is virtually no impact for predicates
+    containing less-than or greater-than operations. For equality the
+    selectivity directly impacts early pruning and even at low selectivities
+    early pruning is often defeated entirely.
   \item \emph{How much time does it take to bring data in the formats required
-    by the scanning algorithms.} Both \simdscan{} and \bs{} really shine in this
-    area. \bwv{} is orders of magnitudes slower, making it infeasible as the
-    primary representation; making it only usable as an index.
+    by the scanning algorithms?}\\
+    Both \simdscan{} and \bs{} really shine in this area. \bwv{} is orders of
+    magnitudes slower, making it infeasible as the primary representation;
+    making it only usable as an index.
   \item \emph{Are there visible improvements due to the bandwidth reduction of
-    block-wise scanning?} Yes. There is a small but visible effect. Making the
-    block size too small can regress performance though so a large block size is
-    better as long as the intermediate bit vectors comfortably fit in cache.
+    block-wise scanning?}\\
+    Yes. There is a small but visible effect. Making the block size too small
+    can regress performance though so a large block size is better as long as
+    the intermediate bit vectors comfortably fit in cache.
 \end{enumerate}
