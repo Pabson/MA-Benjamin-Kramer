@@ -204,39 +204,91 @@ narrower even this was not enough to eliminate the performance advantage of
 \bwv{} over \bs{}.
 
 \begin{figure}[h]
-\pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
+\pgfplotsset{footnotesize,width=4cm,height=6cm,compat=1.8}
 \begin{center}
 \begin{tikzpicture} \begin{axis}[
-    title=\bwv{} vs. \bs{}{},
     ylabel={Runtime (ns)},
-    ymin=0,%ymax=24000,
+    ymin=0,ymax=120000000,
     xlabel={Bit Width},
-    xmin=1,xmax=32,
+    xtick={8,16,24,32},
     mark size=1pt,
     scaled ticks=false,
     legend columns=-1,
-    legend entries={\bwv{}, \bs{}},
+    %legend entries={\simdscan{}, \bwv{}, \bs{}},
     legend to name=leg:bwvbs,
     grid
 ]
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_range_mini.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_range_mini.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/AVX2_equalbig.csv};
+\addlegendentry{\simdscan{}}
+% Horrible hack to populate the legend.
+\addplot+[color=red] coordinates {(8,-100)};
+\addlegendentry{\bwv{}}
+\addplot+[color=olive] coordinates {(8,-100)};
+\addlegendentry{\bs{}}
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=120000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=red,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BWV_range_mini.csv};
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=120000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_range_mini.csv};
 \end{axis}
 \end{tikzpicture}
 
 \begin{tikzpicture} \begin{axis}[
     ylabel={Bytes Read from DRAM},
-    ymin=0,%ymax=24000,
+    ymin=0,ymax=1200000000,
     xlabel={Bit Width},
-    xmin=1,xmax=32,
+    xtick={8,16,24,32},
     mark size=1pt,
     scaled ticks=false,
     grid
 ]
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_range_mini.csv};
-\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BWV_range_mini.csv};
+\addplot+[only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/AVX2_range_mini.csv};
 \end{axis}
 \end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=1200000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=red,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BWV_range_mini.csv};
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture} \begin{axis}[
+    ymin=0,ymax=1200000000,
+    yticklabels={,,},
+    xlabel={Bit Width},
+    xtick={8,16,24,32},
+    mark size=1pt,
+    scaled ticks=false,
+    grid
+]
+\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_range_mini.csv};
+\end{axis}
+\end{tikzpicture}
+
 \ref*{leg:bwvbs}
 \end{center}
 \caption{Runtime of a range predicate with \bwv{} and \bs{}, sum of eight
