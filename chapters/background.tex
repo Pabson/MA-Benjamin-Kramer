@@ -2,6 +2,56 @@
 
 \section{Memory}
 
+Since main memory has become large and cheap enough to store very large data
+sets many data base systems no longer bother reading data from slower but
+cheaper storage such as hard drives but keep everything in main memory and
+perform all queries there directly. This lead to data base systems that are much
+faster than than the previous generation of data base systems. However, there
+are performance limitations to this approach, it is a well-known fact that
+processor performance is growing much faster than memory performance is growing,
+as illustrated in figure~\ref{fig:memorywall}.
+
+\begin{figure}[h] \begin{center}
+\begin{tikzpicture} \begin{semilogyaxis}[
+  grid,
+  width=0.8*\textwidth,
+  xlabel=Year,
+  ylabel=Normalized Performance,
+  xmin=1978, xmax=2010,
+  ymax=100000,
+  scaled ticks=false,
+  log ticks with fixed point,
+  x tick label style={/pgf/number format/fixed,
+                      /pgf/number format/min exponent for 1000 sep=5},
+  legend columns=-1,
+  legend entries={CPU Performance (SPEC), DRAM Latency},
+  legend to name=leg:memorywall,
+]
+\addplot+ table[header=false] {data/hennessy_cpu.csv};
+\addplot+ table[header=false, y expr=250/\thisrowno{1}] {data/hennessy_ramcycles.csv};
+\end{semilogyaxis}
+\end{tikzpicture}
+\ref*{leg:memorywall}
+\end{center}
+\caption{CPU and DRAM performance over time~\cite{hennessyarch}.}
+\label{fig:memorywall}
+\end{figure}
+
+This performance discrepancy has been growing and is unlikely to change in the
+near future. The effect is mainly due to the used type of memory, so-called
+dynamic RAM (DRAM), which is extremely dense in terms of on-chip space and can
+thus be produced very cheaply. However, it relies on the charging and
+discharging of capacitors which is comparatively slow, reading a single bit from
+DRAM can take hundreds of processor cycles.
+
+To overcome this problem many bits are read from RAM in parallel, hiding the
+time needed to charge and discharge the capacitors. The CPU detects sequential
+access of a block of memory and will instruct the memory controller to load
+the next blocks in advance. This is the only way high bandwidth can be extracted
+from this kind of memory, and is very different from access patterns used by
+methods that accelerate accesses in data base systems, such as trees and hash
+tables.
+
 \section{Scans}
 
 One of the most basic primitives to build a database system is the scan. For a
