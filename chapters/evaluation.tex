@@ -199,9 +199,10 @@ widths in between is identical to the next higher bit width without padding. It
 can be clearly seen that \bs{} is not memory bound in this benchmark. Even
 though the pruning works better for case $24$ the runtime performance is much
 worse. The gap can be reduced by using a simpler predicate, for example in
-figure~\ref{fig:eval:equalbig} an equality predicate was used. While much
-narrower even this was not enough to eliminate the performance advantage of
-\bwv{} over \bs{}.
+figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
+predicate is a small subset of the range predicate so the amount of arithmetic
+performed during the scan is significantly lower.  While much narrower even this
+was not enough to eliminate the performance advantage of \bwv{} over \bs{}.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=4cm,height=6cm,compat=1.8}
@@ -223,7 +224,7 @@ narrower even this was not enough to eliminate the performance advantage of
 % Horrible hack to populate the legend.
 \addplot+[color=red] coordinates {(8,-100)};
 \addlegendentry{\bwv{}}
-\addplot+[color=olive] coordinates {(8,-100)};
+\addplot+[color=brown!60!black] coordinates {(8,-100)};
 \addlegendentry{\bs{}}
 \end{axis}
 \end{tikzpicture}
@@ -248,7 +249,7 @@ narrower even this was not enough to eliminate the performance advantage of
     scaled ticks=false,
     grid
 ]
-\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_range_mini.csv};
+\addplot+[color=brown!60!black,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_range_mini.csv};
 \end{axis}
 \end{tikzpicture}
 
@@ -285,7 +286,7 @@ narrower even this was not enough to eliminate the performance advantage of
     scaled ticks=false,
     grid
 ]
-\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_range_mini.csv};
+\addplot+[color=brown!60!black,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_range_mini.csv};
 \end{axis}
 \end{tikzpicture}
 
@@ -299,15 +300,16 @@ runs over $2^{25}$ random integers. \bwv{} group size is eight.}
 This benchmark contradicts the benchmarks seen in the \bs{} paper
 \cite{ByteSlice} where \bs{} is almost always faster than the vertical
 bit-packed format and \simdscan{}. It is likely that the same faulty
-implementation of \simdscan{} was used for this benchmark and a very simple
-predicate was used for \bs{}.
+implementation of \simdscan{} was used for this benchmark that was also used in
+the \bwv{} paper and a very simple predicate was used for \bs{}.
 
-It is also possible that this gap will be closed by the next CPU generation or
-more optimized predicate evaluation code.  \bs{} has other advantages, namely a
-higher pruning probability and very efficient packing and unpacking, which would
-make it highly preferable over \bwv{} if performance parity can be reached.
+It is also possible that this gap will be closed for range predicates by the
+next CPU generation or more optimized predicate evaluation code.  \bs{} has
+other advantages, namely a higher pruning probability and very efficient packing
+and unpacking, which would make it highly preferable over \bwv{} if performance
+parity can be reached.
 
-\section{Comparing predicates and selectivity}
+\section{Comparing Predicates and Selectivities}
 
 So far only a range predicate was tested. For random data in a uniform
 distribution this has the very nice property of hitting the worst case very
@@ -339,7 +341,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
 % Horrible hack to populate the legend.
 \addplot+[color=red] coordinates {(8,-100)};
 \addlegendentry{\bwv{}}
-\addplot+[color=olive] coordinates {(8,-100)};
+\addplot+[color=brown!60!black] coordinates {(8,-100)};
 \addlegendentry{\bs{}}
 \end{axis}
 \end{tikzpicture}
@@ -364,7 +366,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
     scaled ticks=false,
     grid
 ]
-\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_equalbig.csv};
+\addplot+[color=brown!60!black,only marks] table[header=false,col sep=semicolon, x index=2, y index=6] {data/BS_equalbig.csv};
 \end{axis}
 \end{tikzpicture}
 
@@ -401,7 +403,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
     scaled ticks=false,
     grid
 ]
-\addplot+[color=olive,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_equalbig.csv};
+\addplot+[color=brown!60!black,only marks] table[header=false,col sep=semicolon, x index=2, y index=8] {data/BS_equalbig.csv};
 \end{axis}
 \end{tikzpicture}
 
