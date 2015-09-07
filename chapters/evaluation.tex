@@ -326,7 +326,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
 \begin{center}
 \begin{tikzpicture} \begin{axis}[
     ylabel={Runtime (ns)},
-    ymin=0,ymax=100000000,
+    ymin=0,ymax=120000000,
     xlabel={Bit Width},
     xtick={8,16,24,32},
     mark size=1pt,
@@ -346,7 +346,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
 \end{axis}
 \end{tikzpicture}
 \begin{tikzpicture} \begin{axis}[
-    ymin=0,ymax=100000000,
+    ymin=0,ymax=120000000,
     yticklabels={,,},
     xlabel={Bit Width},
     xtick={8,16,24,32},
@@ -358,7 +358,7 @@ plotted in figure~\ref{fig:eval:equalbig}.
 \end{axis}
 \end{tikzpicture}
 \begin{tikzpicture} \begin{axis}[
-    ymin=0,ymax=100000000,
+    ymin=0,ymax=120000000,
     yticklabels={,,},
     xlabel={Bit Width},
     xtick={8,16,24,32},
@@ -448,7 +448,7 @@ bit width of 32 as this shows early pruning in action for both \bwv{} and \bs{}.
 
 \begin{tikzpicture} \begin{semilogxaxis}[
     ylabel={Runtime (ns)},
-    ymin=0,ymax=100000000,
+    ymin=0,ymax=120000000,
     xlabel={Selectivity},
     mark size=1pt,
     scaled ticks=false,
@@ -488,9 +488,7 @@ The graph clearly shows the early pruning patterns calculated in
 chapter~\ref{chapter:analysis}. The bit width of 32 bits is also rather large so
 early pruning can work decently here and the branch overhead does not penalize
 \bwv{} in comparison to \simdscan{}. For \bs{} the situation looks a bit
-different though as there are obvious deficiencies in performance here. It is
-unclear why there is a performance advantage over \bwv{} and \simdscan{} for
-very high selectivities.
+different though as there are obvious deficiencies in performance here.
 
 \section{Packing and Unpacking}
 
