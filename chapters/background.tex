@@ -64,42 +64,6 @@ extracted from this kind of dynamic memory, and is very different from access
 patterns used by methods that accelerate accesses in database systems, such as
 trees and hash tables, so a different approach is needed.
 
-\section{Scans}
-
-One of the most basic primitives to build a database system is the scan. For a
-given table in the database the scan compares every row against a given
-predicate and returns which rows match that predicate. This is equivalent to a
-linear search over a block of memory, the runtime is $O(n)$.
-
-For a long time scans were regarded as something to avoid in database systems.
-Index data structures were developed to accelerate accessing the database. For
-example, evaluating the predicate $a < x < b$ on a sorted table or binary tree
-can be done in two $O(\log n)$ binary searches. On the first glance this should
-be a lot faster than the na\"ive $O(n)$ scan, but a binary search has a number
-of downsides.
-
-\begin{itemize}
-  \item Keeping sorted data available requires redundancy. The indexes also need
-    updating after every change to the underlying data.
-  \item A binary search executes $O(\log n)$ branch instructions, every single
-    branch is dependent on the input data and not predictable. Mispredicted
-    branches slow down the scan as the processor has to wait on the result
-    before proceeding with the next value.
-  \item Most importantly, binary searches introduce random access to the data
-    instead of a sequential access pattern. When the data does not fit into
-    cache every access has to pay the full access time of the DRAM and cannot
-    use the prefetching to hide memory latency described above.
-\end{itemize}
-
-The other major indexing technique, hashing, can avoid branching. It still
-requires redundancy and uses a random memory access pattern. It is obvious that
-neither binary search nor hashing is a good fit for a database in DRAM on modern
-hardware. Of course the actual performance depends among other things on the data
-distribution and the percentage of values selected during the scan, so this is
-not a general statement.
-
-TODO: Column store
-
 \section{SIMD}
 
 The idea behind SIMD (Single Instruction/Multiple Data) architectures as
@@ -172,6 +136,83 @@ Vector add & 1 cycle & 2 per cycle\\
 \caption{Instruction latencies and throughput on Intel Haswell}
 \label{tab:latencies}
 \end{table}
+
+\section{Scans}
+
+One of the most basic primitives to build a database system is the scan. For a
+given table in the database the scan compares every row against a given
+predicate and returns which rows match that predicate. This is equivalent to a
+linear search over a block of memory, the runtime is $\mathcal{O}(n)$.
+
+For a long time scans were regarded as something to avoid in database systems.
+Index data structures were developed to accelerate accessing the database. For
+example, evaluating the predicate $a < x < b$ on a sorted table or binary tree
+can be done in two $\mathcal{O}(\log n)$ binary searches. On the first glance
+this should be a lot faster than the na\"ive $\mathcal{O}(n)$ scan, but a binary
+search has a number of downsides.
+
+\begin{itemize}
+  \item Keeping sorted data available requires redundancy. The indexes also need
+    updating after every change to the underlying data.
+  \item A binary search executes $\mathcal{O}(\log n)$ branch instructions,
+    every single branch is dependent on the input data and not predictable.
+    Mispredicted branches slow down the scan as the processor has to wait on the
+    result before proceeding with the next value.
+  \item Most importantly, binary searches introduce random access to the data
+    instead of a sequential access pattern. When the data does not fit into
+    cache every access has to pay the full access time of the DRAM and cannot
+    use the prefetching to hide memory latency described above.
+\end{itemize}
+
+The other major indexing technique, hashing, can avoid branching. It still
+requires redundancy and uses a random memory access pattern. It is obvious that
+neither binary search nor hashing is a good fit for a database in DRAM on modern
+hardware. Of course the actual performance depends among other things on the data
+distribution and the percentage of values selected during the scan, so there are
+still use cases where an index is highly preferable.
+
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=1.25]{images/rowstore}
+\end{center}
+\caption{Row-wise storage~\cite{JensDPMH}}
+\label{fig:rowstore}
+\end{figure}
+
+Traditionally databases store their tables row-wise as seen in
+figure~\ref{fig:rowstore}. This means that a row is stored completely, then the
+next row is stored adjacent to the last row and so on. When evaluating a
+predicate on this rows all unused columns have to be skipped. Since the skipped
+data is likely smaller than the minimum size of a data chunk that can be loaded
+from DRAM by the CPU (a cacheline) a scan will load a lot of data that is not
+used. But the far bigger issue with this layout is that it makes use of SIMD
+much harder as SIMD works best with homogeneous data. On current processors it
+is unlikely that maximum performance can be extracted without using SIMD.
+
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=1.25]{images/colstore}
+\end{center}
+\caption{Column-wise storage~\cite{JensDPMH}}
+\label{fig:colstore}
+\end{figure}
+
+The alternative to the row-wise storage is to decompose the rows into individual
+columns and store them~\cite{copeland} as shown in figure~\ref{fig:colstore}.
+This has several advantages over the row-wise format.
+
+\begin{itemize}
+  \item Fetches less data from memory during a scan. Columns not used in a scan
+    can be ignored completely.
+  \item SIMD is easily applied as all values in a column have the same format.
+  \item More potential for compression as the elements in one column are often
+    similar to each other.
+\end{itemize}
+
+The major downside of this format is fetching a row from a column store is more
+complex than fetching one from a row store. After the row has been selected all
+columns have to be joined, this incurs at least a potentially random access for
+every column. The column store trades scan performance for a slower access of
+rows. Since the goal is to make scans as fast as possible this thesis will focus
+on column stores.
 
 \section{SIMD on Modern Hardware}
 
@@ -291,12 +332,36 @@ here. Other bit widths require varying amounts of arithmetic and logic operation
 to decompress. In practice every bit width is implemented manually to get an
 optimal sequence of instructions in a tight loop.
 
+\vspace{.5cm}
+
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=.3]{images/scan.png}
+\end{center}
+\caption{Vector comparison with \simdscan{}~\cite{AVX2-Scan}}
+\label{fig:simdscan}
+\end{figure}
+
+The basic steps performed when evaluating a range predicate $\min < x < \max$
+with \simdscan{} are shown in figure~\ref{fig:simdscan}. The example uses a bit
+width of 20 bits per word and a 256 bit vector register holding eight 32 bit
+values.  In a first step eight values (160 bits) are loaded from the table and
+permuted over the eight vector lanes. Because the permutation operation only
+works on byte boundaries the result of this step is not aligned on the 32 bit
+boundaries.  The next step would now be to shift the individual values to the
+boundaries resulting in an aligned vector, but here a different approach is
+taken. Since only comparisons are performed instead of shifting the values
+loaded from the table, the reference constants $\min$ and $\max$ are shifted
+before entering the main loop avoiding some work. Then the permuted values are
+compared to the permuted $\min$ and $\max$ constants, yielding a bit vector
+similar to the process shown in figure~\ref{fig:simplecomparesse}. Because a
+range predicate is evaluated the two comparison results are combined with an AND
+operation and turned into a bit vector using the \texttt{movemask} instruction.
+This bit vector result is the written into the output buffer.
+
 \simdscan{} has greatly benefited from new instruction set extensions such as
 AVX~2 \cite{AVX2-Scan} and is likely to benefit from AVX~512 too as more general
 shuffle and compare instructions have been added, reducing the amount of
 instructions needed for some bit widths.
-
-% TODO: Bilder, tiefe.
 
 As will be shown in chapter~\ref{chapter:evaluation} the \simdscan{} is bound by
 memory bandwidth alone for almost any bit width when using AVX~2 on a modern
@@ -327,8 +392,8 @@ have the lowest overhead of the three methods.
 
 \emph{BitWeaving} \cite{BitWeaving} is a new framework to further accelerate
 scans by rearranging the bits scanned in memory for better performance. It comes
-in two variants, a horizontal version (\emph{BitWeaving/H}) and a vertical
-version (\bwv{}).
+in two variants, a horizontal version, \emph{BitWeaving/H}, and a vertical
+version, \bwv{}.
 
 The horizontal form is based on ``SIMD within a register'' (SWAR) as first
 described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
