@@ -1,12 +1,17 @@
 \chapter{Background}
 
+This chapter gives an overview on the theoretical background of scans and what
+is needed to make them efficient on modern hardware. Then some possible
+solutions are introduced and the approaches that are evaluated later in this
+thesis are described in detail.
+
 \section{Memory}
 
 Since main memory has become large and cheap enough to store very large data
-sets many data base systems no longer bother reading data from slower but
+sets many database systems no longer bother reading data from slower but
 cheaper storage such as hard drives but keep everything in main memory and
-perform all queries there directly. This lead to data base systems that are much
-faster than than the previous generation of data base systems. However, there
+perform all queries there directly. This lead to database systems that are much
+faster than than the previous generation of database systems. However, there
 are performance limitations to this approach, it is a well-known fact that
 processor performance is growing much faster than memory performance is growing,
 as illustrated in figure~\ref{fig:memorywall}.
@@ -24,7 +29,7 @@ as illustrated in figure~\ref{fig:memorywall}.
   x tick label style={/pgf/number format/fixed,
                       /pgf/number format/min exponent for 1000 sep=5},
   legend columns=-1,
-  legend entries={CPU Performance (SPEC), DRAM Latency},
+  legend entries={CPU Performance (SPECint), DRAM Latency},
   legend to name=leg:memorywall,
 ]
 \addplot+ table[header=false] {data/hennessy_cpu.csv};
@@ -37,20 +42,27 @@ as illustrated in figure~\ref{fig:memorywall}.
 \label{fig:memorywall}
 \end{figure}
 
-This performance discrepancy has been growing and is unlikely to change in the
-near future. The effect is mainly due to the used type of memory, so-called
-dynamic RAM (DRAM), which is extremely dense in terms of on-chip space and can
-thus be produced very cheaply. However, it relies on the charging and
+This performance discrepancy has been growing over time and is unlikely to
+change in the near future. The effect is mainly due to the used type of memory,
+so-called dynamic RAM (DRAM), which is extremely dense in terms of on-chip space
+and can thus be produced very cheaply. However, it relies on the charging and
 discharging of capacitors which is comparatively slow, reading a single bit from
-DRAM can take hundreds of processor cycles.
+DRAM can take hundreds of processor cycles. Processors use faster static RAM in
+small caches which store data that was recently accessed. This helps performance
+in programs working on small data sets but for the large data sets typically
+used in database system it rarely makes a difference because caches are too
+small to hold all of the data.
 
-To overcome this problem many bits are read from RAM in parallel, hiding the
-time needed to charge and discharge the capacitors. The CPU detects sequential
+To overcome the problem that reading one bit is slow, many bits are read from
+RAM in parallel, hiding the time needed to charge and discharge the capacitors.
+This essentially means that a block of memory is read in the same amount of time
+as a single bit is. To further improve the access times the CPU detects sequential
 access of a block of memory and will instruct the memory controller to load
-the next blocks in advance. This is the only way high bandwidth can be extracted
-from this kind of memory, and is very different from access patterns used by
-methods that accelerate accesses in data base systems, such as trees and hash
-tables.
+the next blocks in advance. As the next block is read in the background the
+latency is invisible to the user. This is the only way high bandwidth can be
+extracted from this kind of dynamic memory, and is very different from access
+patterns used by methods that accelerate accesses in database systems, such as
+trees and hash tables, so a different approach is needed.
 
 \section{Scans}
 
@@ -58,6 +70,33 @@ One of the most basic primitives to build a database system is the scan. For a
 given table in the database the scan compares every row against a given
 predicate and returns which rows match that predicate. This is equivalent to a
 linear search over a block of memory, the runtime is $O(n)$.
+
+For a long time scans were regarded as something to avoid in database systems.
+Index data structures were developed to accelerate accessing the database. For
+example, evaluating the predicate $a < x < b$ on a sorted table or binary tree
+can be done in two $O(\log n)$ binary searches. On the first glance this should
+be a lot faster than the na\"ive $O(n)$ scan, but a binary search has a number
+of downsides.
+
+\begin{itemize}
+  \item Keeping sorted data available requires redundancy. The indexes also need
+    updating after every change to the underlying data.
+  \item A binary search executes $O(\log n)$ branch instructions, every single
+    branch is dependent on the input data and not predictable. Mispredicted
+    branches slow down the scan as the processor has to wait on the result
+    before proceeding with the next value.
+  \item Most importantly, binary searches introduce random access to the data
+    instead of a sequential access pattern. When the data does not fit into
+    cache every access has to pay the full access time of the DRAM and cannot
+    use the prefetching to hide memory latency described above.
+\end{itemize}
+
+The other major indexing technique, hashing, can avoid branching. It still
+requires redundancy and uses a random memory access pattern. It is obvious that
+neither binary search nor hashing is a good fit for a database in DRAM on modern
+hardware. Of course the actual performance depends among other things on the data
+distribution and the percentage of values selected during the scan, so this is
+not a general statement.
 
 TODO: Column store
 
