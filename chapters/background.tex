@@ -382,7 +382,9 @@ of a column are read. There are two possible changes to improve this.
     column is small. This complicates random access and makes fully utilizing
     SIMD harder because SIMD instructions as described earlier are usually only
     provided for fixed-size integers.
-  \item Trying to abort the scan before all bits are read.
+  \item Trying to abort the scan before all bits are read. This is possible by
+    modifying the storage format and performing the comparison of a word on
+    smaller chunks than the full word size.
 \end{itemize}
 
 The following sections focus on exiting the scan early as this is most likely to
@@ -395,12 +397,20 @@ scans by rearranging the bits scanned in memory for better performance. It comes
 in two variants, a horizontal version, \emph{BitWeaving/H}, and a vertical
 version, \bwv{}.
 
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=1.5]{images/bwh}
+\end{center}
+\caption{Storage layout of a horizontal bit packed format~\cite{BitWeaving}}
+\label{fig:bwh}
+\end{figure}
+
 The horizontal form is based on ``SIMD within a register'' (SWAR) as first
 described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
 contiguously, similar to the format \simdscan{} uses except that a stop bit is
-added between every element, adding memory overhead. To do a scan on this data
-it is not decompressed but the arithmetic primitives used to do a comparison are
-decomposed and directly applied to the compressed data.
+added between every element, adding memory overhead. An example is shown in
+figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed but
+the arithmetic primitives used to do a comparison are decomposed and directly
+applied to the compressed data, which is different from \simdscan{}.
 
 As \emph{BitWeaving/H} provides no significant advantage over \simdscan{} but
 adds additional memory overhead it was not taken into consideration. Knuth
@@ -409,19 +419,61 @@ arithmetic operations, it is however unlikely that this will make
 \emph{BitWeaving/H} faster than \simdscan{}, the contrary is more likely.
 \emph{BitWeaving/H} also has to read all the data for a scan.
 
-% TODO: Bild.
-
 Not reading all the data is the primary advantage of the other flavor of
 \emph{BitWeaving}, \bwv{}. This format uses a vertical format first suggested in
 \cite{oneill}. The individual bits of a word in the column are no longer stored
 together but distributed over many words. In memory this means that the most
 significant bits of all words are stored first, followed by the second-most
-significant bits and so on. Scans are still implemented using a SWAR method on a
-bit-wise level. The difference is now that for a comparison operation the scan
-of a word is aborted after mismatch occurs for the first time. Any additional
-bits do not have to be read anymore.
+significant bits and so on as seen in figure~\ref{fig:bwv}. Scans are still
+implemented using a SWAR method on a bit-wise level. The difference is now that
+for a comparison operation the scan of a word is aborted after mismatch occurs
+for the first time. Any additional bits do not have to be read anymore. This
+behavior is called early pruning or early exiting.
+
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=1.5]{images/bwv}
+\end{center}
+\caption{Storage layout of a vertical bit packed format~\cite{BitWeaving}}
+\label{fig:bwv}
+\end{figure}
 
 To derive a performance advantage out of the memory that is not read anymore the
-column is partitioned into a fixed amount of groups.
+column is partitioned into a fixed amount of groups. This can be imagined as
+first storing the four most significant of all words first, in the vertical
+format. This forms the first partition or group. Then the fourth to eighth
+significant bits are stored in the next group and so on. Early pruning is
+performed after a full group is processed so the processor can take advantage of
+the sequential access without any interruption. This also reduces the likeliness
+of mispredicted branches as the total number of early pruning branches is
+reduced.
+
+The major downside of this vertical format is the same that was seen when
+switching from row-wise to column-wise storage. Again, this is a trade-off
+between scan performance and the amount of work necessary to extract a row from
+the storage. As the bits of a single value are now distributed over many memory
+locations reading it becomes a lot slower.
 
 \section{\bs{}}
+
+\bs{} \cite{ByteSlice} can be seen as a hybrid between vertical and horizontal
+bit packing formats. It is very similar to the \bwv{} format but does not
+distribute individual bits over multiple locations but only distributes bytes.
+Intel's SIMD extension have very efficient instructions for byte-level
+comparisons and permutations so this avoids complexity in the scan loop.
+
+This byte-level vertical format has several advantages over the bit-level
+vertical format. Packing and unpacking \bs{} data only has to touch one eighth
+of the memory locations \bwv{} has to access. Furthermore, moving bytes in a
+vector register for packing and unpacking can be done using shuffle instructions
+in most SIMD instruction sets. Bit-level shuffling is usually not available.
+This allows very fast access of individual values without the high overhead in
+the \bwv{} format while still providing early pruning opportunities.
+
+When comparing early pruning it might seem like \bwv{} provides better pruning
+opportunities as aborting is possible after every bit in theory. \bs{} can only
+prune after quantities of eight bits have been processed. This is only partially
+true though because \bs{} contains fewer values per vector word so early pruning
+is more likely to occur, a single value in a vector word in either format can
+prevent early exiting. The grouping in \bwv{} also reduces the early pruning
+opportunities but this can also be applied to \bs{}. However, \bs{} group sizes
+are always a multiple of eight.
