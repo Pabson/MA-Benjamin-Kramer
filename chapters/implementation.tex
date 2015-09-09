@@ -97,10 +97,10 @@ congested load path.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
-  \Procedure{splatBit}{$w$, $b$}
+  \Procedure{splatBit}{uint32\_t $w$, int $b$}
   \State $w \gets w << (31-b)$ \Comment{move bit $b$ into the most significant position}
   \State $w \gets w >> 31$ \Comment{arithmetic shift right}
-  \State \Return \_mm256\_set1\_epi32($w$) \Comment{return splat vector}
+  \State \Return \_mm256\_set1\_epi32($w$) \Comment{broadcast $w$ over vector width}
   \EndProcedure
 \end{algorithmic}
 \caption{Duplicate bit number $b$ from a 32 bit integer over a
@@ -132,11 +132,11 @@ loop than earlier anticipated.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
-  \Procedure{unsignedCompare}{bits, reference, bytenumber}
-  \State bits $\gets$ \_mm256\_xor\_si256(Bits, \_mm256\_set1\_epi8(0x80));
-  \State reference $\gets$ reference \^{} 0x80808080
-  \State reference $\gets$ splatByte(reference, bytenumber)
-  \State \Return \_mm256\_cmpgt\_epi8(bits, reference)
+  \Procedure{unsignedCompare}{\_\_m256i bits, uint32\_t reference, int bytenumber}
+  \State bitsFixed $\gets$ \_mm256\_xor\_si256(bits, \_mm256\_set1\_epi8(0x80));
+  \State referenceFixed $\gets$ reference \^{} 0x80808080
+  \State referenceVector $\gets$ splatByte(referenceFixed, bytenumber)
+  \State \Return \_mm256\_cmpgt\_epi8(bitsFixed, referenceVector)
   \EndProcedure
 \end{algorithmic}
 \caption{Extract a reference byte and do an unsigned comparison with a vector}
@@ -149,9 +149,9 @@ instead of bits (algorithm~\ref{algo:splatbyte}).
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
-  \Procedure{splatByte}{$w$, $b$}
+  \Procedure{splatByte}{uint32\_t $w$, int $b$}
   \State $w \gets w >> (b * 8)$ \Comment{move byte $b$ into the least significant position}
-  \State \Return \_mm256\_set1\_epi8($w$) \Comment{return splat vector}
+  \State \Return \_mm256\_set1\_epi8((uint8\_t)$w$) \Comment{broadcast $w$ over vector width}
   \EndProcedure
 \end{algorithmic}
 \caption{Duplicate byte number $b$ from a 32 bit integer over a full 256 bit vector}
