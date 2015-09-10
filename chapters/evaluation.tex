@@ -202,7 +202,14 @@ worse. The gap can be reduced by using a simpler predicate, for example in
 figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
 predicate is a small subset of the range predicate so the amount of arithmetic
 performed during the scan is significantly lower.  While much narrower even this
-was not enough to eliminate the performance advantage of \bwv{} over \bs{}.
+was not enough to eliminate the performance advantage of \bwv{} over \bs{}. A
+possible explanation for this behavior is the increased number of branch
+instructions executed by \bs{}. While \bwv{} branches after every $n$ 256 bit
+words read, where $n$ is the group size, \bs{} checks for early exit after every
+256 bit word. This makes pruning more effective at the cost of more branching.
+It would be possible to add groups to \bs{} but since it works on bytes the
+group size must be a multiple of eight, severely limiting early pruning
+opportunities, so this method was not tried.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=4cm,height=6cm,compat=1.8}
@@ -597,14 +604,6 @@ competitive at all with the other sizes because it inhibits using SIMD
 instructions. Testing showed a slow down of more than $10\times$. Using this
 method is not recommended for any type of scan.
 
-The next graph in figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
-and $1024$ with an infinite block size. There is a small performance benefit of
-this method but it is not very pronounced, as calculated in
-chapter~\ref{chapter:analysis}. What does not match the analysis is that the
-bit width has virtually no effect on the performance difference even though the
-percentage of saved memory bandwidth is much higher for small bit widths. This
-effect is most likely due to cache effects.
-
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
 \begin{center}
@@ -649,15 +648,13 @@ effect is most likely due to cache effects.
 \label{fig:eval:bwvblocks4}
 \end{figure}
 
-Figure~\ref{fig:eval:bwvblocks16} shows the same scan but this time the data was
-distributed over 16 columns. This has a catastrophic effect on scan performance
-because the memory prefetching of the used Haswell CPU cannot cope with this
-many streams, effectively removing the performance advantage of sequential
-access. The amount of written data is much lower for this test case though, the
-amount of input data was the same overall but more of the results were
-intermediate ones compared to the four column case. The intermediate results
-fit in cache for small bit widths here leading to a curved graph for the
-infinite block size, this will not happen for larger data sets.
+The next graph in figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
+and $1024$ with an infinite block size. There is a small performance benefit of
+this method but it is not very pronounced, as calculated in
+chapter~\ref{chapter:analysis}. What does not match the analysis is that the
+bit width has virtually no effect on the performance difference even though the
+percentage of saved memory bandwidth is much higher for small bit widths. This
+effect is most likely due to cache effects.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}
@@ -702,6 +699,16 @@ infinite block size, this will not happen for larger data sets.
 \caption{Comparing different block sizes for sixteen columns with \bwv{}}
 \label{fig:eval:bwvblocks16}
 \end{figure}
+
+Figure~\ref{fig:eval:bwvblocks16} shows the same scan but this time the data was
+distributed over 16 columns. This has a catastrophic effect on scan performance
+because the memory prefetching of the used Haswell CPU cannot cope with this
+many streams, effectively removing the performance advantage of sequential
+access. The amount of written data is much lower for this test case though, the
+amount of input data was the same overall but more of the results were
+intermediate ones compared to the four column case. The intermediate results
+fit in cache for small bit widths here leading to a curved graph for the
+infinite block size, this will not happen for larger data sets.
 
 Once the prefetcher ceased to work there is also a visible advantage of using
 larger block sizes, in this case $1024$ performed significantly better than
@@ -757,6 +764,7 @@ intermediate results into main memory. The result for one block only weighs
 $\frac{2^{17}}{8}=2^{14}$ bytes which easily fits into any cache on the
 processor.
 
+\newpage
 \section{Summary}
 
 Coming back to the questions posed in the introduction of this chapter, all of

@@ -137,6 +137,7 @@ Vector add & 1 cycle & 2 per cycle\\
 \label{tab:latencies}
 \end{table}
 
+\newpage
 \section{Scans}
 
 One of the most basic primitives to build a database system is the scan. For a
@@ -477,3 +478,14 @@ is more likely to occur, a single value in a vector word in either format can
 prevent early exiting. The grouping in \bwv{} also reduces the early pruning
 opportunities but this can also be applied to \bs{}. However, \bs{} group sizes
 are always a multiple of eight.
+
+The storage of bytes also comes at a cost of flexibility. \bwv{} can easily
+store any bit width with no memory lost to overhead bits. \bs{} is limited to
+multiples of eight, all other bit widths add more complexity. One solution is to
+pad to the next multiple of eight with zeros. For example a column of nine bit
+values is padded to 16 bit values, adding seven bits of overhead. This is
+clearly a disadvantage when the scan is limited by memory bandwidth. Another
+solution would be to store as many bytes as possible and switch to the \bwv{}
+format for the remaining bits. For nine bit values this would be one byte in
+\bs{} and one bit in \bwv{}. This also has zero memory overhead but increases
+the complexity of the scan by splitting it into two stages.

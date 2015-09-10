@@ -148,8 +148,6 @@ group size of eight so no additional handling is needed, but it is also less
 flexible. This does not have an effect on early pruning probabilities but
 reduces the amount of memory pruned away.
 
-\paragraph{Worst and Best Cases for Other Predicates}
-
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
   \Procedure{IsLess}{$a$, $b$}
@@ -164,6 +162,8 @@ reduces the amount of memory pruned away.
 \caption{Algorithm to check whether bit vector of size $n$ $a$ is less than $b$}
 \label{algo:less}
 \end{algorithm}
+
+\paragraph{Worst and Best Cases for Other Predicates}
 
 For the other predicates $<,\le,>,\ge$ and \textsc{between} the worst and best
 cases are basically the same as for equality and inequality predicates, they are
@@ -210,7 +210,7 @@ evaluation order based on its selectivity information.
 Intra-column pruning also applies to scan algorithms that do not generally
 support early pruning, such as \simdscan{}.
 
-\begin{figure}\center
+\begin{figure}[h]\center
 \begin{tikzpicture}[node distance=4cm]
 \tikzset{
 table/.style={
