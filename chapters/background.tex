@@ -482,10 +482,36 @@ are always a multiple of eight.
 The storage of bytes also comes at a cost of flexibility. \bwv{} can easily
 store any bit width with no memory lost to overhead bits. \bs{} is limited to
 multiples of eight, all other bit widths add more complexity. One solution is to
-pad to the next multiple of eight with zeros. For example a column of nine bit
-values is padded to 16 bit values, adding seven bits of overhead. This is
-clearly a disadvantage when the scan is limited by memory bandwidth. Another
-solution would be to store as many bytes as possible and switch to the \bwv{}
-format for the remaining bits. For nine bit values this would be one byte in
-\bs{} and one bit in \bwv{}. This also has zero memory overhead but increases
-the complexity of the scan by splitting it into two stages.
+pad to the next multiple of eight with zeros. For example a column of eleven bit
+values is padded to 16 bit values, adding three bits of overhead as shown in
+figure~\ref{fig:bseleven}. In the worst case this can add up to seven bits of
+overhead per value. This is clearly a disadvantage when the scan is limited by
+memory bandwidth. Another solution would be to store as many bytes as possible
+and switch to the \bwv{} format for the remaining bits. For eleven bit values
+this would be one byte in \bs{} and three bit in \bwv{}. This also has zero
+memory overhead but increases the complexity of the scan by splitting it into
+two stages.
+
+\begin{figure}[h] \begin{center}
+\includegraphics[scale=1]{images/bytesliceelevenbits}
+\end{center}
+\caption{Storage layout eleven bit values in \bs{} using zero padding~\cite{ByteSlice}}
+\label{fig:bseleven}
+\end{figure}
+
+\section{Summary}
+
+In this chapter we have seen a basic overview of memory and SIMD instructions on
+modern hardware and methods to perform scans on in-memory column stores.
+\simdscan{} is one method for scans that works very well on modern hardware,
+being only limited by the bandwidth from memory to the CPU core. \bwv{} and
+\bs{} are two techniques that look very promising as they are likely just as
+bound by memory bandwidth as \simdscan{} as their scans are not more complex in
+terms of instructions executed. However, these methods can extract additional
+advantages by using a more sophisticated memory layout to avoid reading all bits
+from memory and thus saving precious memory bandwidth.
+
+In the rest of the thesis we will evaluate both in theory and with practically
+benchmarks how this early exiting performs when doing a scan. The performance
+analysis now contains a probabilistic component depending on the input data that
+was not necessary with \simdscan{}.
