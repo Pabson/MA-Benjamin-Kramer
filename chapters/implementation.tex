@@ -108,6 +108,47 @@ full 256 bit vector}
 \label{algo:splatbit}
 \end{algorithm}
 
+Putting it all together will result in the scan loop in
+algorithm~\ref{algo:bitweavingscan}. It processes 256 bit at the same time with
+only a relatively small number of arithmetic instructions all of which are
+directly available on AVX~2. A logical not ($\sim$) is not available in AVX~2
+but a combined \texttt{andnot} instruction can be used instead. This also
+reduces the total number of instructions needed. Early pruning can be
+conveniently implemented using a logical or and the \texttt{ptest} instruction
+in AVX~2, which compares a full 256 bit vector with zero and allows branching on
+the result.
+
+\begin{algorithm}[h]
+\begin{algorithmic}[1]
+  \Procedure{ByteSliceScan}{uint32\_t upper, uint32\_t lower, \_\_m256i *out,
+  int width, int num, int numGroups, int groupSize}
+  \For {$i=0$ to $\frac{num}{256}$}
+    \State Mlt $\gets 0$
+    \State Mgt $\gets 0$
+    \State Meq1 $\gets AllOnes$
+    \State Meq2 $\gets AllOnes$
+    \For {$j=0$ to $numGroups$}
+      \For {$k=(j+1) * groupSize$ downto $j * groupSize$}
+        \If {Meq1 = 0 or Meq2 = 0}
+          \State break \Comment{early pruning}
+        \EndIf
+        \State Bits $\gets$ load one 256 bit word
+        \State splatLower $\gets$ splatBit(lower, k)
+        \State splatUpper $\gets$ splatBit(upper, k)
+        \State Mgt $\gets$ Mgt \textbf{or} (splatLower \textbf{and} $\sim$(Meq1 \textbf{and} Bits))
+        \State Mlt $\gets$ Mlt \textbf{or} (Bits \textbf{and} $\sim$(Meq2 \textbf{and} splatUpper))
+        \State Meq1 $\gets$ (Bits \textbf{xor} splatLower) \textbf{and} $\sim$(Meq1)
+        \State Meq2 $\gets$ (Bits \textbf{xor} splatUpper) \textbf{and} $\sim$(Meq2)
+      \EndFor
+    \EndFor
+    \State out[i] $\gets$ Meq1 \textbf{or} (Mlt \textbf{and} Mgt)
+  \EndFor
+  \EndProcedure
+\end{algorithmic}
+\caption{Evaluating $lower \le x < upper$ in \bwv{} for AVX~2}
+\label{algo:bitweavingscan}
+\end{algorithm}
+
 The most complex part of the implementation was designing a fast way to unpack
 and pack the input data into the format required by the \bwv{} scan. For packing
 the \texttt{movmskps} instruction was used combined with vector shifts. This
@@ -156,6 +197,53 @@ instead of bits (algorithm~\ref{algo:splatbyte}).
 \end{algorithmic}
 \caption{Duplicate byte number $b$ from a 32 bit integer over a full 256 bit vector}
 \label{algo:splatbyte}
+\end{algorithm}
+
+Putting it all together we end up with the full scan in
+algorithm~\ref{algo:byteslicescan}. The only addition is \texttt{equalCompare}
+which is the same as \texttt{unsignedCompare} with the greater than comparison
+replaced by equality. By inlining the compare functions into the scan loop some
+redundant work can be eliminated but this predicate is significantly more
+complex than the same predicate implemented in \bwv{}. This is primarily due to
+the lack of unsigned vector compares in AVX~2 which have to be emulated with
+multiple instructions. As the instruction budget to stay limited by memory
+bandwith is very tight this may be a disadvantage over other scan algorithms.
+The next version of AVX, AVX-512 will include unsigned comparisons, eliminating
+this issue altogether. Just as with \bwv{}, early pruning can be conveniently
+implemented using a single or instruction followed by AVX~2's \texttt{ptest}.
+This scan loop also processes 256 bits at a time but only 32 values
+concurrently. As the loop is not as nested as \bwv{} the early pruning branch is
+executed more often. \texttt{movemask} compresses the result vector into a 32
+bit value that is written to the output buffer.
+
+\begin{algorithm}[h]
+\begin{algorithmic}[1]
+  \Procedure{ByteSliceScan}{uint32\_t upper, uint32\_t lower, uint32\_t *out, int width, int num}
+  \For {$i=0$ to $\frac{num}{32}$}
+    \State Mlt $\gets 0$
+    \State Mgt $\gets 0$
+    \State Meq1 $\gets AllOnes$
+    \State Meq2 $\gets AllOnes$
+    \For {$j=\frac{width+7}{8}-1$ downto $0$}
+      \If {Meq1 = 0 or Meq2 = 0}
+        \State break \Comment{early pruning}
+      \EndIf
+      \State Bits $\gets$ load one 256 bit word
+      \State gt $\gets$ unsignedCompare(Bits, lower, $j$)
+      \State lt $\gets$ unsignedCompare(upper, Bits, $j$)
+      \State eq1 $\gets$ equalCompare(Bits, lower, $j$)
+      \State eq2 $\gets$ equalCompare(Bits, upper, $j$)
+      \State Mgt $\gets$ Mgt \textbf{or} (gt \textbf{and} Meq1)
+      \State Mlt $\gets$ Mlt \textbf{or} (lt \textbf{and} Meq2)
+      \State Meq1 $\gets$ Meq1 \textbf{and} eq1
+      \State Meq2 $\gets$ Meq2 \textbf{and} eq2
+    \EndFor
+    \State out[i] $\gets$ movemask((Mlt \textbf{and} Mgt) \textbf{or} Meq1)
+  \EndFor
+  \EndProcedure
+\end{algorithmic}
+\caption{Evaluating $lower \le x < upper$ in \bs{} for AVX~2}
+\label{algo:byteslicescan}
 \end{algorithm}
 
 Packing and unpacking into the \bs{} representation can be done extremely
