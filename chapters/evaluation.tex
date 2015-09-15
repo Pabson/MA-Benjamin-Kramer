@@ -35,7 +35,7 @@ DRAM controller was measured from the CPU performance counters using Intel PCM.
 \section{Comparing \simdscan{} to \bwv{}}
 
 The first and most important evaluation result will be a direct comparison
-between \simdscan{} and \bwv{}. As seen in figure~\ref{fig:eval:bwvsimdb8}. In
+between \simdscan{} and \bwv{}. As seen in Figure~\ref{fig:eval:bwvsimdb8}. In
 this configuration early pruning was performed after reading 4 bits as
 suggested in~\cite{BitWeaving}.
 
@@ -132,7 +132,7 @@ additional branching that has to be performed at every early pruning step. To
 reduce the amount of branching one possible tweak is to reduce the number of
 bits that are processed without early pruning. This diminishes the
 effectiveness of early pruning though. For the benchmark in
-figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
+Figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
 8 or 16 bits processed. The selectivity for this benchmark was fixed at $50\,\%$.
 
 \begin{figure}[h]
@@ -199,7 +199,7 @@ widths in between is identical to the next higher bit width without padding. It
 can be clearly seen that \bs{} is not memory bound in this benchmark. Even
 though the pruning works better for case $24$ the runtime performance is much
 worse. The gap can be reduced by using a simpler predicate, for example in
-figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
+Figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
 predicate is a small subset of the range predicate so the amount of arithmetic
 performed during the scan is significantly lower.  While much narrower even this
 was not enough to eliminate the performance advantage of \bwv{} over \bs{}. A
@@ -326,7 +326,7 @@ benchmark this worst case will be investigated. For reasons of simplicity an
 equality predicate was used, but the observation also applies to any inequality
 or range predicate. Only 8, 16, 24 and 32 bits are evaluated because others are
 not directly supported by \bs{}. The results in runtime and DRAM reads are
-plotted in figure~\ref{fig:eval:equalbig}.
+plotted in Figure~\ref{fig:eval:equalbig}.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=4cm,height=6cm,compat=1.8}
@@ -439,7 +439,7 @@ between $100\,\%$ and $0\,\%$.}
 
 One important fact that is not represented in this graph is that for \bwv{} and
 \bs{} about half of the points are in the topmost position. This is shown in
-detail in figure~\ref{fig:eval:equalbigselectivity} which shows the results
+detail in Figure~\ref{fig:eval:equalbigselectivity} which shows the results
 against the selectivity on a logarithmic scale. The results are only shown for a
 bit width of 32 as this shows early pruning in action for both \bwv{} and \bs{}.
 
@@ -648,7 +648,7 @@ method is not recommended for any type of scan.
 \label{fig:eval:bwvblocks4}
 \end{figure}
 
-The next graph in figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
+The next graph in Figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
 and $1024$ with an infinite block size. There is a small performance benefit of
 this method but it is not very pronounced, as calculated in
 chapter~\ref{chapter:analysis}. What does not match the analysis is that the
@@ -714,7 +714,7 @@ Once the prefetcher ceased to work there is also a visible advantage of using
 larger block sizes, in this case $1024$ performed significantly better than
 $256$ as there is some sequential access left that the CPU can recognize. This
 lead to the next test that uses a vastly larger block size of $2^{17}$ which is
-tested in figure~\ref{fig:eval:bwvblocks100k} with a larger data set.
+tested in Figure~\ref{fig:eval:bwvblocks100k} with a larger data set.
 
 \begin{figure}[h]
 \pgfplotsset{footnotesize,width=0.75*\textwidth,height=6cm,compat=1.8}

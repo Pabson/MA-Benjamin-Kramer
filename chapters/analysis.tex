@@ -33,7 +33,7 @@ runtime analysis of a scan. The simplest predicate to analyze is the equality
 predicate. This predicate looks for values that are exactly the same as a
 reference. In \bwv{} this is solved by looking at a value from the column and
 the reference bit by bit, starting with the most significant, as shown for a
-single value in algorithm~\ref{algo:equal}. In reality \bwv{} compares many
+single value in Algorithm~\ref{algo:equal}. In reality \bwv{} compares many
 values in parallel.
 
 \begin{algorithm}[h]
@@ -114,7 +114,7 @@ $$P(b)={\left(1-{\left(\frac{1}{2}\right)}^b\right)}^{64}$$
 for \bs{}~\cite{ByteSlice}. Both rapidly approach $100\,\%$ for high bit widths,
 with \bs{} having a huge advantage over \bwv{} at position eight and still being
 better at position sixteen as seen in
-figure~\ref{fig:earlypruningprobabilities}.
+Figure~\ref{fig:earlypruningprobabilities}.
 
 \begin{figure}[h] \center
 \begin{tikzpicture} \begin{axis}[
@@ -170,10 +170,10 @@ cases are basically the same as for equality and inequality predicates, they are
 triggered by exactly the same data.  However, there is no direct link between
 the worst case and selectivity anymore. For $<,\le,>,\ge$ the worst case is hit
 when all data is equal to the reference constant as seen in
-algorithm~\ref{algo:less}. For \textsc{between} there is a slight difference as
+Algorithm~\ref{algo:less}. For \textsc{between} there is a slight difference as
 both boundaries have to be taken into account as the computation is only aborted
 when neither has a current bit equal to the value processed
-(algorithm~\ref{algo:between}).
+(Algorithm~\ref{algo:between}).
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -198,7 +198,7 @@ when neither has a current bit equal to the value processed
 
 Another application of early pruning is discarding elements early when
 evaluating a predicate over multiple columns. For example in
-figure~\ref{fig:columnpruning} a conjunctive predicate over three columns is
+Figure~\ref{fig:columnpruning} a conjunctive predicate over three columns is
 evaluated, completely gray colored rows were skipped due to row the already being
 discarded in the previous column. The regular \bwv{}-style early pruning is
 also applied. This can be extremely effective for conjunctive predicates with

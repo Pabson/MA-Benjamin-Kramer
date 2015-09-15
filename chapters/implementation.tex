@@ -91,7 +91,7 @@ algorithm was implemented in C++ using AVX~2 compiler intrinsics. Implementing
 the scan itself was rather straight forward and only minor deviations from the
 suggested implementation in the paper were made. The most significant change is
 that the values that replicated bits of the reference constants over a full
-vector were computed on demand using algorithm~\ref{algo:splatbit}. This did not
+vector were computed on demand using Algorithm~\ref{algo:splatbit}. This did not
 change the runtime of the scan but potentially saves resources in the already
 congested load path.
 
@@ -109,7 +109,7 @@ full 256 bit vector}
 \end{algorithm}
 
 Putting it all together will result in the scan loop in
-algorithm~\ref{algo:bitweavingscan}. It processes 256 bit at the same time with
+Algorithm~\ref{algo:bitweavingscan}. It processes 256 bit at the same time with
 only a relatively small number of arithmetic instructions all of which are
 directly available on AVX~2. A logical not ($\sim$) is not available in AVX~2
 but a combined \texttt{andnot} instruction can be used instead. This also
@@ -156,7 +156,7 @@ processes eight 32 bit integers at the same time but is still slow as a lot of
 memory is touched. Since there is no reverse operation of \texttt{movmskps} in
 the AVX~2 instruction set unpacking was implemented by replicating the bits of a
 single value over a full vector and using shifts and masking. The basic idea is
-shown in algorithm~\ref{algo:packbwv}.
+shown in Algorithm~\ref{algo:packbwv}.
 
 Packing and unpacking is generally very slow for \bwv{} as unpacking a single
 value has to touch as many cache lines as there are bits in the value. This is a
@@ -192,7 +192,7 @@ due to limitations in the AVX~2 instruction set that were not described in the
 \bs{} paper. The implementation relies on unsigned integer comparisons but AVX~2
 only supplies signed versions. To turn the signed versions into unsigned
 compares all sign bits are flipped as illustrated in
-algorithm~\ref{algo:cmpunsigned}. This adds more instructions to the main scan
+Algorithm~\ref{algo:cmpunsigned}. This adds more instructions to the main scan
 loop than earlier anticipated.
 
 \begin{algorithm}[h]
@@ -210,7 +210,7 @@ loop than earlier anticipated.
 
 The byte extraction and duplication is also implemented differently from the
 paper. It uses the same method as the \bwv{} implementation but adapted to bytes
-instead of bits (algorithm~\ref{algo:splatbyte}).
+instead of bits (Algorithm~\ref{algo:splatbyte}).
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -224,7 +224,7 @@ instead of bits (algorithm~\ref{algo:splatbyte}).
 \end{algorithm}
 
 Putting it all together we end up with the full scan in
-algorithm~\ref{algo:byteslicescan}. The only addition is \texttt{equalCompare}
+Algorithm~\ref{algo:byteslicescan}. The only addition is \texttt{equalCompare}
 which is the same as \texttt{unsignedCompare} with the greater than comparison
 replaced by equality. By inlining the compare functions into the scan loop some
 redundant work can be eliminated but this predicate is significantly more
@@ -280,7 +280,7 @@ positions in the output buffer. This only touches five memory locations, reading
 from one and storing to four at the maximum bit width of 32 bits. All accesses
 are sequential so it should perform very well on modern hardware.
 
-The code in algorithm~\ref{algo:packbs} shows the basic packing method. A 256
+The code in Algorithm~\ref{algo:packbs} shows the basic packing method. A 256
 bit vector is loaded and vector shuffles are used to group the vector elements
 by their byte number. The first 64 bit integer of the vector then contains the
 most significant bytes of the eight 32 bit integers that were loaded from

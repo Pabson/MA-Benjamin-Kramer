@@ -8,13 +8,13 @@ thesis are described in detail.
 \section{Memory}
 
 Since main memory has become large and cheap enough to store very large data
-sets many database systems no longer bother reading data from slower but
-cheaper storage such as hard drives but keep everything in main memory and
-perform all queries there directly. This lead to database systems that are much
-faster than than the previous generation of database systems. However, there
-are performance limitations to this approach, it is a well-known fact that
-processor performance is growing much faster than memory performance is growing,
-as illustrated in figure~\ref{fig:memorywall}.
+sets, many database systems no longer bother reading data from slower but
+cheaper storage such as hard drives, but keep everything in main memory and
+perform all queries directly there. This lead to database systems that are much
+faster than the previous generation of database systems. However, there are
+performance limitations to this approach: it is a well-known fact that processor
+performance is growing much faster than memory performance is growing, as
+illustrated in Figure~\ref{fig:memorywall}.
 
 \begin{figure}[h] \begin{center}
 \begin{tikzpicture} \begin{semilogyaxis}[
@@ -45,44 +45,46 @@ as illustrated in figure~\ref{fig:memorywall}.
 This performance discrepancy has been growing over time and is unlikely to
 change in the near future. The effect is mainly due to the used type of memory,
 so-called dynamic RAM (DRAM), which is extremely dense in terms of on-chip space
-and can thus be produced very cheaply. However, it relies on the charging and
-discharging of capacitors which is comparatively slow, reading a single bit from
+and can thus be produced very cheaply. However, it relies on charging and
+discharging of capacitors, which is comparatively slow: reading a single bit from
 DRAM can take hundreds of processor cycles. Processors use faster static RAM in
-small caches which store data that was recently accessed. This helps performance
-in programs working on small data sets but for the large data sets typically
-used in database system it rarely makes a difference because caches are too
-small to hold all of the data.
+small caches which store data that was recently accessed. This principle of
+locality helps performance in programs working on small data sets but for the
+large data sets typically used in database systems it rarely makes a difference,
+because caches are too small to hold all of the data.
 
-To overcome the problem that reading one bit is slow, many bits are read from
-RAM in parallel, hiding the time needed to charge and discharge the capacitors.
-This essentially means that a block of memory is read in the same amount of time
-as a single bit is. To further improve the access times the CPU detects sequential
-access of a block of memory and will instruct the memory controller to load
-the next blocks in advance. As the next block is read in the background the
-latency is invisible to the user. This is the only way high bandwidth can be
-extracted from this kind of dynamic memory, and is very different from access
-patterns used by methods that accelerate accesses in database systems, such as
-trees and hash tables, so a different approach is needed.
+To overcome expensive one-bit reads, many bits are read from RAM in parallel,
+hiding the time needed to charge and discharge the capacitors. This essentially
+means that a block of memory is read in the same amount of time as a single bit
+is. To further improve the access times, the CPU detects sequential access of a
+block of memory and will instruct the memory controller to load the next blocks
+in advance. Because the next block is read in the background the latency is
+invisible to the user. This so-called prefetching strategy is the only way high
+bandwidth can be achieved with this kind of dynamic memory. Common methods to
+accelerate accesses in database systems, such as trees and hash tables, use a
+memory access pattern that cannot take advantage of prefetching so a different
+approach is needed.
 
 \section{SIMD}
 
 The idea behind SIMD (Single Instruction/Multiple Data) architectures as
-firstly classified by Flynn \cite{flynnsimd}, is to use a single instructions
+first classified by Flynn \cite{flynnsimd}, is to use a single instruction
 stream to process many different values at once. The earliest members of this
 class of architectures were the vector processors of the 1970's such as the
-Cray 1 or the Earth Simulator, fastest supercomputer in the world in the year
+Cray 1 or the Earth Simulator, the fastest supercomputer in the world in the year
 2002 \cite{hennessyarch}. In a vector processor the size of a register is not
 static but the number of elements in a register can be configured at runtime up
-to a certain limit, the Cray 1 had a limit of 64 values in a register, each of
+to a certain limit. The Cray 1 had a limit of 64 values in a register, each of
 the values 64 bits wide. When arithmetic instructions are executed with such a
-vector register in its operand the individual values can be processed in parallel
-as far as resources permit. So processing a 64-element vector can take
+vector register, the individual values in the operands can be processed in
+parallel as far as resources permit. So processing a 64-element vector can take
 significant less than 64 cycles. Load operations typically gather values that
-can be scattered throughout memory into a single registers and load operations
+can be scattered throughout memory into a single register and load operations
 have to disperse the values back into memory. By this approach a vector
-instruction set has dramatically fewer instructions than an architecture that
-operates on a single value at a time. This frees up instruction decoding
-resources that can be repurposed to increase throughput elsewhere.
+instruction set can perform the same operations while executing dramatically
+fewer instructions than an architecture that operates on a single value at a
+time. This frees up instruction decoding resources that can be repurposed to
+increase throughput elsewhere.
 
 However, classic vector architectures have not become the most prevalent model
 for modern processor architectures, obvious reasons being:
@@ -95,22 +97,25 @@ memory organized in fixed-size blocks where at least a full block is fetched or
 stored. This would waste a significant amount of memory bandwidth and cache
 memory.
 \item The large variable-length registers add additional state to the processor.
+This state must be managed by the operating system, making the switching between
+processes more expensive.
 \end{itemize}
 
-In the end a fairly limited subset of a vector architecture has found its way
-into virtually any instruction set but the most reduced for embedded
-applications. These so called multimedia instructions only support a fixed-size
-registers which can usually be overlaid with different data types, for example
-registers containing 128 bits can be used as either four 32-bit values or eight
-16 bit values. This means there are many different instructions compared to the
-approach taken by vector architectures. Scattering and gathering is usually not
-present or only in a limited form by loading values separated by a constant gap.
-Examples for this form of vector instructions are MMX, SSE and AVX on Intel
-CPUs, AltiVec on PowerPC or NEON on ARM processors.
+In the end, a fairly limited subset of a vector processor's instruction set has
+found its way into the instructions set of virtually any commodity processor but
+those geared towards low-performance embedded applications. These so-called
+multimedia instructions only support fixed-size registers which can usually be
+overlaid with different data types. For example registers containing 128 bits
+can be used as either four 32-bit values or eight 16 bit values. This means
+there are many different instructions compared to the approach taken by vector
+architectures.  Scattering and gathering is usually not present or only in a
+limited form by loading values separated by a constant gap.  Examples for this
+form of vector instructions are MMX, SSE and AVX on Intel CPUs, AltiVec on
+PowerPC or NEON on ARM processors.
 
 To understand why SIMD still provides an advantage over superscalar
 instruction-level parallelism the latency and throughput of normal instructions
-has to be taken into account. In table~\ref{tab:latencies} the latencies and
+has to be taken into account. In Table~\ref{tab:latencies} the latencies and
 throughput for loads and additions are shown. Now imagine a loop creating a sum
 over 32-bit values; requiring a load and an add. All instructions are fully
 pipelined so we can load two 32 bit integers and perform two additions per
@@ -118,9 +123,9 @@ cycle, the full throughput is not achievable because we cannot load more than
 two values. Now we change the loop to work on 256 bit vectors, the load
 throughput does not change with size so we can load 16 32-bit integers per cycle
 and still perform 2 full adds, adding all 16 integers. In theory we now
-increased the throughput eightfold. In practice the performance will be bound be
-bound by memory latency in this simple example though, unless the number of
-arithmetic instructions is increased.
+increased the throughput eightfold. In practice the performance will be bound by
+memory latency though, unless the number of arithmetic instructions is
+increased.
 
 \begin{table}\center
 \begin{tabular}{c|c|c}
@@ -133,7 +138,7 @@ Vector load & (depends on cache) & 2 per cycle\\
 Vector add & 1 cycle & 2 per cycle\\
 %Vector mul & 5 cycles & 1 per cycle
 \end{tabular}
-\caption{Instruction latencies and throughput on Intel Haswell}
+\caption{Instruction latencies and throughput on Intel Haswell \cite{agnertables}}
 \label{tab:latencies}
 \end{table}
 
@@ -143,9 +148,10 @@ Vector add & 1 cycle & 2 per cycle\\
 One of the most basic primitives to build a database system is the scan. For a
 given table in the database the scan compares every row against a given
 predicate and returns which rows match that predicate. This is equivalent to a
-linear search over a block of memory, the runtime is $\mathcal{O}(n)$.
+linear search over a block of memory, the runtime is $\mathcal{O}(n)$, where $n$
+is the number of rows.
 
-For a long time scans were regarded as something to avoid in database systems.
+For a long time, scans were regarded as something to avoid in database systems.
 Index data structures were developed to accelerate accessing the database. For
 example, evaluating the predicate $a < x < b$ on a sorted table or binary tree
 can be done in two $\mathcal{O}(\log n)$ binary searches. On the first glance
@@ -153,24 +159,26 @@ this should be a lot faster than the na\"ive $\mathcal{O}(n)$ scan, but a binary
 search has a number of downsides.
 
 \begin{itemize}
-  \item Keeping sorted data available requires redundancy. The indexes also need
-    updating after every change to the underlying data.
+  \item Keeping sorted data available requires redundancy or expensive data
+    movement during modification operations. The indexes also need to be
+    maintained after every change to the underlying data.
   \item A binary search executes $\mathcal{O}(\log n)$ branch instructions,
     every single branch is dependent on the input data and not predictable.
     Mispredicted branches slow down the scan as the processor has to wait on the
     result before proceeding with the next value.
   \item Most importantly, binary searches introduce random access to the data
     instead of a sequential access pattern. When the data does not fit into
-    cache every access has to pay the full access time of the DRAM and cannot
+    cache, every access has to pay the full access time of the DRAM and cannot
     use the prefetching to hide memory latency described above.
 \end{itemize}
 
 The other major indexing technique, hashing, can avoid branching. It still
 requires redundancy and uses a random memory access pattern. It is obvious that
-neither binary search nor hashing is a good fit for a database in DRAM on modern
-hardware. Of course the actual performance depends among other things on the data
-distribution and the percentage of values selected during the scan, so there are
-still use cases where an index is highly preferable.
+neither binary search nor hashing can take advantage of fast sequential accesses
+for databases in DRAM on modern hardware. Of course the actual performance
+depends among other things on the data distribution and the percentage of values
+selected during the scan, so there are still use cases where an index is highly
+preferable.
 
 \begin{figure}[h] \begin{center}
 \includegraphics[scale=1.25]{images/rowstore}
@@ -180,14 +188,14 @@ still use cases where an index is highly preferable.
 \end{figure}
 
 Traditionally databases store their tables row-wise as seen in
-figure~\ref{fig:rowstore}. This means that a row is stored completely, then the
+Figure~\ref{fig:rowstore}. This means that a row is stored completely, then the
 next row is stored adjacent to the last row and so on. When evaluating a
 predicate on this rows all unused columns have to be skipped. Since the skipped
 data is likely smaller than the minimum size of a data chunk that can be loaded
 from DRAM by the CPU (a cacheline) a scan will load a lot of data that is not
 used. But the far bigger issue with this layout is that it makes use of SIMD
-much harder as SIMD works best with homogeneous data. On current processors it
-is unlikely that maximum performance can be extracted without using SIMD.
+much harder, as SIMD works best with homogeneous data. On current processors it
+is unlikely that maximum performance can be achieved without using SIMD.
 
 \begin{figure}[h] \begin{center}
 \includegraphics[scale=1.25]{images/colstore}
@@ -196,20 +204,20 @@ is unlikely that maximum performance can be extracted without using SIMD.
 \label{fig:colstore}
 \end{figure}
 
-The alternative to the row-wise storage is to decompose the rows into individual
-columns and store them~\cite{copeland} as shown in figure~\ref{fig:colstore}.
+The alternative to row-wise storage is to decompose the rows into individual
+columns and store them as shown in Figure~\ref{fig:colstore}~\cite{copeland}.
 This has several advantages over the row-wise format.
 
 \begin{itemize}
-  \item Fetches less data from memory during a scan. Columns not used in a scan
-    can be ignored completely.
+  \item Less data is being fetched from memory during a scan. Columns not used
+    in a scan can be ignored completely.
   \item SIMD is easily applied as all values in a column have the same format.
   \item More potential for compression as the elements in one column are often
     similar to each other.
 \end{itemize}
 
 The major downside of this format is fetching a row from a column store is more
-complex than fetching one from a row store. After the row has been selected all
+complex than fetching one from a row store. After the row has been selected, all
 columns have to be joined, this incurs at least a potentially random access for
 every column. The column store trades scan performance for a slower access of
 rows. Since the goal is to make scans as fast as possible this thesis will focus
@@ -259,7 +267,7 @@ DRAM.
 
 A scan over an array of integers of size 8, 16, 32 or 64 bits can be
 easily implemented in SSE or AVX as illustrated in
-figure~\ref{fig:simplecomparesse}. Here a greater than predicate is executed,
+Figure~\ref{fig:simplecomparesse}. Here a greater than predicate is executed,
 the \texttt{pcmpgt} instruction takes two vectors and sets the corresponding
 element in a result vector to either all ones if the element in the first
 vector is greater than the element in the second vector. Otherwise it is set to
@@ -320,7 +328,7 @@ result of \texttt{movmsk} is $00111101$ in binary or $3d$ in hexadecimal.
 \section{\simdscan{}}
 
 \simdscan{} \cite{SIMD-Scan} takes the basic idea shown in
-figure~\ref{fig:simplecomparesse} and extends it to arbitrary bit widths. The
+Figure~\ref{fig:simplecomparesse} and extends it to arbitrary bit widths. The
 methodology is comparable to a normal compression format where data is first
 decompressed in one step and then processed in another. The compression format
 stores a set of fixed-size integers without any padding. For decompression those
@@ -343,7 +351,7 @@ optimal sequence of instructions in a tight loop.
 \end{figure}
 
 The basic steps performed when evaluating a range predicate $\min < x < \max$
-with \simdscan{} are shown in figure~\ref{fig:simdscan}. The example uses a bit
+with \simdscan{} are shown in Figure~\ref{fig:simdscan}. The example uses a bit
 width of 20 bits per word and a 256 bit vector register holding eight 32 bit
 values.  In a first step eight values (160 bits) are loaded from the table and
 permuted over the eight vector lanes. Because the permutation operation only
@@ -354,7 +362,7 @@ taken. Since only comparisons are performed instead of shifting the values
 loaded from the table, the reference constants $\min$ and $\max$ are shifted
 before entering the main loop avoiding some work. Then the permuted values are
 compared to the permuted $\min$ and $\max$ constants, yielding a bit vector
-similar to the process shown in figure~\ref{fig:simplecomparesse}. Because a
+similar to the process shown in Figure~\ref{fig:simplecomparesse}. Because a
 range predicate is evaluated the two comparison results are combined with an AND
 operation and turned into a bit vector using the \texttt{movemask} instruction.
 This bit vector result is the written into the output buffer.
@@ -409,7 +417,7 @@ The horizontal form is based on ``SIMD within a register'' (SWAR) as first
 described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
 contiguously, similar to the format \simdscan{} uses except that a stop bit is
 added between every element, adding memory overhead. An example is shown in
-figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed but
+Figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed but
 the arithmetic primitives used to do a comparison are decomposed and directly
 applied to the compressed data, which is different from \simdscan{}.
 
@@ -425,7 +433,7 @@ Not reading all the data is the primary advantage of the other flavor of
 \cite{oneill}. The individual bits of a word in the column are no longer stored
 together but distributed over many words. In memory this means that the most
 significant bits of all words are stored first, followed by the second-most
-significant bits and so on as seen in figure~\ref{fig:bwv}. Scans are still
+significant bits and so on as seen in Figure~\ref{fig:bwv}. Scans are still
 implemented using a SWAR method on a bit-wise level. The difference is now that
 for a comparison operation the scan of a word is aborted after mismatch occurs
 for the first time. Any additional bits do not have to be read anymore. This
@@ -484,7 +492,7 @@ store any bit width with no memory lost to overhead bits. \bs{} is limited to
 multiples of eight, all other bit widths add more complexity. One solution is to
 pad to the next multiple of eight with zeros. For example a column of eleven bit
 values is padded to 16 bit values, adding three bits of overhead as shown in
-figure~\ref{fig:bseleven}. In the worst case this can add up to seven bits of
+Figure~\ref{fig:bseleven}. In the worst case this can add up to seven bits of
 overhead per value. This is clearly a disadvantage when the scan is limited by
 memory bandwidth. Another solution would be to store as many bytes as possible
 and switch to the \bwv{} format for the remaining bits. For eleven bit values
