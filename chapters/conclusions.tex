@@ -1,6 +1,6 @@
 \chapter{Conclusions and Future Work}
 
-In this thesis the multiple ways of performing full table scans in a column
+In this thesis multiple ways of performing full table scans in a column
 store were analyzed and evaluated. The baseline is \simdscan{}, which works on
 tightly packed data and, as the name says, makes use of SIMD. The key
 observation was that \simdscan{} is only bound by memory bandwidth on a single
@@ -18,7 +18,7 @@ feasible.
 
 The huge advantage of \bwv{} and \bs{} over \simdscan{} is the ability to abort
 processing of an element before all bits of that element are loaded. Combined
-with a memory layout that lets the processor avoid loading the unnecessary bits
+with a memory layout that lets the processor avoid loading unnecessary bits
 this can yield a significant reduction in memory bandwidth used. \bwv{} uses a
 vertical bit layout where bits of different code words are stored together
 depending on their position in the input word. \bs{} is very similar but uses a
@@ -31,12 +31,12 @@ While analyzing the behavior of \bwv{} another extremely important observation
 was made. Since a modern processor always loads data from RAM in constant-sized
 cache lines only skipping a cache line in its entirety can avoid loading data
 from main memory. In theory, the probability of early exiting depends on the
-number of elements processed at the same time and thus the register size. A
+number of elements processed at the same time, and thus the register size. A
 single element can trigger the worst case of loading all bits and the
 probability that such an element is in the register grows with register size.
-However, since early exiting only avoids memory traffic the probability is
+However, since early exiting only avoids memory traffic, the probability is
 always fixed at the cache line size regardless of register size. This of course
-only applies as long as the algorithm is only limited by memory bandwidth and
+only applies as long as the algorithm is only limited by memory bandwidth, and
 not by other CPU resources such as instruction throughput.
 
 In benchmarks the early pruning algorithms can easily beat \simdscan{} on
@@ -98,3 +98,36 @@ algorithms it should only be a secondary option and be picked based on the work
 load.
 
 \section{Future Work}
+
+The most immediate open question is whether \bs{} can be made as fast as \bwv{}
+on current or future hardware. The vertical byte format is vastly superior to
+the vertical bit format in terms of packing and unpacking performance.
+
+On the scan side, evaluating more compression formats is a very wide topic.
+There are many different compression formats~\cite{lemire2015decoding} that can
+potentially run fast enough to be only limited by memory bandwidth. There are
+also formats such as Simple-8~\cite{Simple8} that may benefit from SIMD
+instructions but actually implementing it on top of existing instruction sets
+like AVX~2 is difficult. Another possibility is changing the order of values in
+the column~\cite{markl1999variable}. This has the disadvantage of requiring meta
+data to reconstruct the original order but can facilitate better compression.
+
+Another potentially large field for future work is how to deal with different
+scan algorithms in a query optimizer. This ranges from reordering the columns in
+a query by expected selectivity based on historical data to increase early
+pruning probabilities to the exact point when to choose a format like \bwv{}
+over \simdscan{} and vice-versa. A fast \bs{} would make this a little simpler
+as the fast packing and unpacking makes switching between representations
+feasible.
+
+If a vertical format is chosen as a primary representation there are also
+possibilities to perform aggregate operations like summation directly on the
+data. The same applies to joins. This would remove the need for unpacking
+operations for queries that do not actually materialize results from the table.
+
+Last but not least this thesis only looked at single-core performance. To use
+the memory bandwidth to its full potential multiple cores are needed as a
+single core cannot saturate the bus entirely. For example the Haswell CPU used
+in the benchmarks peaks at around 11 gigabytes per second on a single core,
+while the specification suggests a peak bandwidth of 68 gigabytes per second so
+the processor is still not at its full potential.
