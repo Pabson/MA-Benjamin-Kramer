@@ -74,11 +74,11 @@ comparison in parallel. For example an implementation targeting the 256-bit
 registers in Intel's AVX~2 instruction set extension will read bits from 256
 values at the same time, perform the comparison and advance to the next 256 bits
 of the same values. This however means that if at least one of those 256 values
-is equal to the reference value the worst case is automatically triggered for
-256 values. For uniformly distributed data the expected value for a selectivity
-where early pruning still has an effect and not all bits must be read is as low
-as $$E[S]=\frac{1}{256}\approx 0.4\,\%$$ In other words, the worst case can be
-achieved by placing one equal value in every 256 values.
+is equal to the reference value, the worst case is automatically triggered for
+256 values. For uniformly distributed data the expected value $E$ for a
+selectivity $S$ where early pruning still has an effect and not all bits must be
+read is as low as $$E[S]=\frac{1}{256}\approx 0.4\,\%$$ In other words, the
+worst case can be achieved by placing one equal value in every 256 values.
 
 For \bs{} the worst case is always eight times better as fewer values are being
 processed in parallel. For an AVX~2 implementation only 32 eight-bit slices are
@@ -88,25 +88,25 @@ case up to $$E[S]=\frac{1}{32}\approx 3.1\,\%$$
 \paragraph{Putting It on Real Hardware}
 
 On current server-class hardware \bwv{} can easily hit memory bandwidth
-limitations. This has an effect on the early pruning probabilities too as
+limitations. This has an effect on the early pruning probabilities too, as
 memory is loaded in cache line-sized chunks. Only if an entire cache line can
-be skipped a reduction in memory bandwidth (and thus scan performance) can be
+be skipped, a reduction in memory bandwidth (and thus scan performance) can be
 achieved. On the tested Intel hardware a cache line consists of 512 bits,
-meaning the theoretical worst case is off by a factor of two. For a uniform
+meaning that the theoretical worst case is off by a factor of two. For a uniform
 distribution of equal values the worst case selectivity for \bwv{} becomes
 $$E[S]=\frac{1}{512}\approx 0.2\,\%$$ as every cache line contains bits of 512
 values. For \bs{} which only uses bytes and stores bits of 64 value per cache
 line it goes down to $$E[S]=\frac{1}{64}\approx 1.6\,\%$$ As long as the cache
 line size is larger than the register size, the register size has no effect on
-the early pruning probability. As soon as the computation is fast enough so the
-scan is only limited by memory bandwidth further increases or decreases of the
-register size will not have any effect on scan performance.
+the early pruning probability. As soon as the computation is fast enough, such
+the scan is only limited by memory bandwidth, further increases or decreases of
+the register size will not have any effect on scan performance.
 
 \paragraph{Calculating the Early Pruning Probability For A Given Bit}
 
 Now that we have established the worst and best cases we can look at the
 average cases. For uniformly distributed data where any bit can be set with a
-probability of $50\,\%$ the probability that a given value is equal with the
+probability of $50\,\%$, the probability that a given value is equal with the
 reference value up to bit $b$ is ${\left(\frac{1}{2}\right)}^b$,
 so the full probability that we skip a cache line when reading bit $b$ is
 $$P(b)={\left(1-{\left(\frac{1}{2}\right)}^b\right)}^{512}$$
@@ -138,18 +138,21 @@ Figure~\ref{fig:earlypruningprobabilities}.
 \label{fig:earlypruningprobabilities}
 \end{figure}
 
-For both \bwv{} and \bs{} there can be a significant hit due to branch
-mispredictions in the early pruning code if pruning triggers irregularly. In the
-range of bit widths between 1 and 32 bits the most mispredictions will occur for
-code widths between 8 and 16 bits as the probabilities are not close to $0\,\%$
-or $100\,\%$. This can severely impact the runtime of the scan.  To
-reduce this effect \bwv{} partitions the bits into groups and only after a full
-group has been processed the pruning branch is executed. \bs{} has an intrinsic
-group size of eight so no additional handling is needed, but it is also less
-flexible. This does not have an effect on early pruning probabilities but
-reduces the amount of memory pruned away.
+For both \bwv{} and \bs{} there can be a significant performance penalty due to
+branch mispredictions in the early pruning code if pruning triggers irregularly.
+Attempting to prune too early will be unsuccessful, or hit an area where the
+probability is too low so branch mispredictions will eliminate any performance
+advantage from the saved memory bandwidth.  In the range of bit widths between 1
+and 32 bits, the most mispredictions will occur for code widths between 8 and 16
+bits as the probabilities are not close to $0\,\%$ or $100\,\%$. This can
+severely impact the runtime of the scan. To reduce this effect, \bwv{}
+partitions the bits into groups and only after a full group has been processed
+the pruning branch is executed. \bs{} has an intrinsic group size of eight so no
+additional handling is needed, but it is also less flexible. The intrinsic group
+size does not have an effect on early pruning probabilities -- the pruning
+decision is only postponed -- but reduces the amount of memory pruned away.
 
-\begin{algorithm}[h]
+\begin{algorithm}[hb]
 \begin{algorithmic}[1]
   \Procedure{IsLess}{$a$, $b$}
     \For {$i \gets n-1$ to $0$}
@@ -160,7 +163,7 @@ reduces the amount of memory pruned away.
     \State \Return false
   \EndProcedure
 \end{algorithmic}
-\caption{Algorithm to check whether bit vector of size $n$ $a$ is less than $b$}
+\caption{Algorithm to check in bit vector of size $n$, whether $a$ is less than $b$}
 \label{algo:less}
 \end{algorithm}
 
@@ -199,7 +202,7 @@ when neither has a current bit equal to the value processed
 
 Another application of early pruning is discarding elements early when
 evaluating a predicate over multiple columns. For example in
-Figure~\ref{fig:columnpruning} a conjunctive predicate over three columns is
+Figure~\ref{fig:columnpruning}, a conjunctive predicate over three columns is
 evaluated, completely gray colored rows were skipped due to row the already being
 discarded in the previous column. The regular \bwv{}-style early pruning is
 also applied. This can be extremely effective for conjunctive predicates with
@@ -261,12 +264,12 @@ columns}
 \section{Block-Wise Scanning}
 
 The output of a scan as performed by \bwv{} and \bs{} is a bit vector with one
-bit for every value in the input. Depending on the result of the predicate the
+bit for every value in the input. Depending on the result of the predicate, the
 bit is either set or not set. Traditionally a column is scanned in its entirety,
 the result bit vector is written to memory and the scan proceeds to the next
 column. This means that an extra bit per value has to be written to memory for
 the intermediate results which is not needed for the end result. To reduce
-bandwidth the columns are now partitioned into fixed-size blocks. After a block
+bandwidth, the columns are now partitioned into fixed-size blocks. After a block
 is scanned, the bit vector is kept in cache and the algorithm proceeds scanning
 the next column. This is repeated for all columns, the final result is written
 and the scan advances to the next set of blocks.
@@ -306,14 +309,14 @@ is the number of columns and $b$ is the bit width.
 
 The potential downside for large column counts is that it can destroy the
 regular consecutive access pattern of the memory. Modern processors are
-optimized to recognize this pattern and pre-fetch following accesses. Since
-this is the reason why column scans are fast a significant performance hit will
-be seen if the pre-fetching stops working due to changed access patterns.
+optimized to recognize this pattern and pre-fetch sequential accesses. Since
+this is the reason why column scans are fast, a significant performance penalty
+will be seen if pre-fetching stops working due to changed access patterns.
 
 The block-wise technique works for all kinds of scan algorithms, including
 \simdscan{}, \bwv{} and \bs{}.
 
-Since \bwv{} with AVX~2 always processes 256 elements at a time it would be
+Since \bwv{} with AVX~2 always processes 256 elements at a time, it would be
 reasonable to pick 256 as the block size and keep the intermediate values in
 registers at all time. Since the \bwv{} implementation is limited by DRAM
 bandwidth and intermediate values will stay in cache unless the block size is
