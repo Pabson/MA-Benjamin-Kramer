@@ -511,6 +511,11 @@ terms of instructions executed. However, these methods can extract additional
 advantages by using a more sophisticated memory layout to avoid reading all bits
 from memory and thus saving precious memory bandwidth.
 
+\bwv{} and \bs{} are very similar in their basic idea and behavior but differ in
+details. This affects the number of branches executed, the probability of early
+pruning and the complexity of bringing data into the scan representation and
+vice-versa. This justifies a separate analysis of both approaches.
+
 In the rest of the thesis we will evaluate both in theory and with practically
 benchmarks how this early exiting performs when doing a scan. The performance
 analysis now contains a probabilistic component depending on the input data that

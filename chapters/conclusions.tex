@@ -1,1 +1,100 @@
 \chapter{Conclusions and Future Work}
+
+In this thesis the multiple ways of performing full table scans in a column
+store were analyzed and evaluated. The baseline is \simdscan{}, which works on
+tightly packed data and, as the name says, makes use of SIMD. The key
+observation was that \simdscan{} is only bound by memory bandwidth on a single
+core on a current Intel Haswell server and by making full use of AVX~2. This
+made \simdscan{} the baseline algorithm and possible improvements were looked
+at. To qualify the new scan algorithm has to have a very tight inner loop as
+the available memory bandwidth only allows for a small amount of instructions
+to be executed per word loaded from memory. This also makes the use of wider
+SIMD instructions very important as it reduces the number of instructions
+executed per byte read from memory. After many options of possible compression
+techniques were examined \bwv{} and \bs{} were chosen as they use an extremely
+simple compression scheme which uses exactly the same amount of bits as
+\simdscan{}. The same data size made comparing the different approaches
+feasible.
+
+The huge advantage of \bwv{} and \bs{} over \simdscan{} is the ability to abort
+processing of an element before all bits of that element are loaded. Combined
+with a memory layout that lets the processor avoid loading the unnecessary bits
+this can yield a significant reduction in memory bandwidth used. \bwv{} uses a
+vertical bit layout where bits of different code words are stored together
+depending on their position in the input word. \bs{} is very similar but uses a
+vertical byte layout, where individual bytes keep their inner layout but are
+placed into different memory locations. Nevertheless, early exiting adds a
+probabilistic component to the analysis of the runtime of the scan, depending on
+the input data, which makes the scan less predictable.
+
+While analyzing the behavior of \bwv{} another extremely important observation
+was made. Since a modern processor always loads data from RAM in constant-sized
+cache lines only skipping a cache line in its entirety can avoid loading data
+from main memory. In theory, the probability of early exiting depends on the
+number of elements processed at the same time and thus the register size. A
+single element can trigger the worst case of loading all bits and the
+probability that such an element is in the register grows with register size.
+However, since early exiting only avoids memory traffic the probability is
+always fixed at the cache line size regardless of register size. This of course
+only applies as long as the algorithm is only limited by memory bandwidth and
+not by other CPU resources such as instruction throughput.
+
+In benchmarks the early pruning algorithms can easily beat \simdscan{} on
+\textsc{Between} predicates with bit widths larger than 20 bits per word and
+uniform random data. For small bit widths up to about 10 bits there is no
+difference in scan runtime and in between the pruning scans are actually slower
+than \simdscan{}. This is due to the branching overhead incurred by pruning
+early and makes it much harder to make a clear recommendation.
+
+While inequality predicates such as less than and greater than show little to
+none sensitivity on the selectivity, equality predicate performance is directly
+bound to the selectivity. The selectivities where early pruning becomes
+significant for those predicates lie at $0.2\,\%$ for \bwv{} and $1.6\,\%$ for
+\bs{} which is very low. For this use case pruning algorithms have very little
+advantage over \simdscan{}.
+
+In early pruning also lies the major difference in scan performance between
+\bwv{} and \bs{}. \bs{} stores fewer elements per cache line so the early
+pruning probability is higher. On the other hand, it also executes more
+branches per word read from memory so the branching overhead is higher. In this
+thesis \bs{} could not beat \bwv{} in terms of scan performance. The effect is
+more pronounced for complex predicates such as \textsc{Between} than for
+simpler predicates such as equivalence, mostly due to AVX~2 missing important
+instructions for the operations performed by \bs{} increasing the total number
+of instructions executed per word.
+
+Another extremely important thing to keep in mind when choosing a scan
+algorithm is the time needed to bring data into the representation needed for
+the scan and also the performance of the reverse operation which is needed to
+materialize the results. Testing shows that \bwv{} is prohibitively expensive
+in this regard, transforming the data takes orders of magnitudes longer than a
+scan for this format. This is due to the gathering and scattering of bits over
+many different words, AVX~2 provides no fast way to do this. For \simdscan{}
+and \bs{} though, the packing and unpacking operations are very fast and close
+to a simple copying operation. This makes it feasible to use the scan
+representation as the only representation and going without additional indexes.
+
+The last improvement evaluated is block-wise scanning, where multiple columns
+are scanned and the switching between the columns occurs after a specific block
+size. This reduces the amount of intermediate results that need to be written
+to memory. The gain from this is not very large and can trigger effects in the
+processor that can massively slow down the scan as the processor fails to
+recognize the memory access pattern as a sequential scan.
+
+The result of the benchmarks is that small block sizes (less than a couple of
+thousand elements per block) perform a few percent better than a full column
+scan for less than eight columns. For more columns the processor fails to
+recognize the scan and performance becomes extremely bad. This effect goes away
+for larger block sizes as the tested block size of $2^{17}$. The performance
+advantage stays though. All in all block-wise scanning is only recommended if
+it can be easily implemented in the data base system as the gains are rather
+small.
+
+In conclusion, \bwv{} and \bs{} are viable improvements over \simdscan{} in
+some cases. The main advantage is visible for range predicates and large bit
+widths over 20 bits. For all other cases results are more mixed and can be the
+same or significantly worse. If a database system wants to make use of those
+algorithms it should only be a secondary option and be picked based on the work
+load.
+
+\section{Future Work}
