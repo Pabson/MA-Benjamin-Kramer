@@ -98,7 +98,7 @@ different parts.
   over multiple iterations. This skews the result, however there is virtually
   no difference in scan performance between \simdscan{} and \bwv{}. Early
   pruning can theoretically abort the scan after four or eight bits but the
-  probability calculated in chapter~\ref{chapter:analysis} is very low so no
+  probability calculated in Chapter~\ref{chapter:analysis} is very low so no
   effect is observed.
   \item Bit widths $8-12$: as calculated earlier and visible in the memory
   graph early pruning is still not effective here. The overhead of the additional
@@ -124,7 +124,7 @@ as the bit width gets larger. This contradicts the observations of the
 other methods. It is very likely that a faulty implementation of \simdscan{} was
 used for those benchmarks as it is very competitive.
 
-\section{Reducing the early pruning overhead}
+\section{Reducing the Early Pruning Overhead}
 
 As seen in the last graphs there is a significant overhead in the area around
 16 bits when comparing \bwv{} with \simdscan{}. This overhead comes from the
@@ -204,9 +204,9 @@ predicate is a small subset of the range predicate so the amount of arithmetic
 performed during the scan is significantly lower.  While much narrower even this
 was not enough to eliminate the performance advantage of \bwv{} over \bs{}. A
 possible explanation for this behavior is the increased number of branch
-instructions executed by \bs{}. While \bwv{} branches after every $n$ 256 bit
+instructions executed by \bs{}. While \bwv{} branches after every $n$ 256-bit
 words read, where $n$ is the group size, \bs{} checks for early exit after every
-256 bit word. This makes pruning more effective at the cost of more branching.
+256-bit word. This makes pruning more effective at the cost of more branching.
 It would be possible to add groups to \bs{} but since it works on bytes the
 group size must be a multiple of eight, severely limiting early pruning
 opportunities, so this method was not tried.
@@ -492,7 +492,7 @@ width 32.}
 \end{figure}
 
 The graph clearly shows the early pruning patterns calculated in
-chapter~\ref{chapter:analysis}. The bit width of 32 bits is also rather large so
+Chapter~\ref{chapter:analysis}. The bit width of 32 bits is also rather large so
 early pruning can work decently here and the branch overhead does not penalize
 \bwv{} in comparison to \simdscan{}. For \bs{} the situation looks a bit
 different though as there are obvious deficiencies in performance here.
@@ -651,7 +651,7 @@ method is not recommended for any type of scan.
 The next graph in Figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
 and $1024$ with an infinite block size. There is a small performance benefit of
 this method but it is not very pronounced, as calculated in
-chapter~\ref{chapter:analysis}. What does not match the analysis is that the
+Chapter~\ref{chapter:analysis}. What does not match the analysis is that the
 bit width has virtually no effect on the performance difference even though the
 percentage of saved memory bandwidth is much higher for small bit widths. This
 effect is most likely due to cache effects.

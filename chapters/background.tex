@@ -120,7 +120,7 @@ throughput for loads and additions are shown. Now imagine a loop creating a sum
 over 32-bit values; requiring a load and an add. All instructions are fully
 pipelined so we can load two 32 bit integers and perform two additions per
 cycle, the full throughput is not achievable because we cannot load more than
-two values. Now we change the loop to work on 256 bit vectors, the load
+two values. Now we change the loop to work on 256-bit vectors, the load
 throughput does not change with size so we can load 16 32-bit integers per cycle
 and still perform 2 full adds, adding all 16 integers. In theory we now
 increased the throughput eightfold. In practice the performance will be bound by
@@ -234,7 +234,7 @@ Intel has a long history supplying multimedia instruction sets:
 \begin{description}
 \item[MMX] The Multi Media eXtension made the start in 1997, supplying integer
 instructions on 64 bit registers shared with the existing floating point unit.
-\item[SSE] The Streaming SIMD Extension added a fully independent 128 bit
+\item[SSE] The Streaming SIMD Extension added a fully independent 128-bit
 register set in 1999. SSE only supported floating point operations, SSE~2 added
 the integer counterparts in 2001. SSE was extended with many different
 instructions often catered towards operations commonly found in video codecs.
@@ -243,10 +243,10 @@ SSE to 256 bits. As with SSE, AVX provided only floating point operations and
 AVX~2 added integer instructions. AVX also provides new encodings for all
 existing SSE instructions using a three-operand form instead of the more
 restricted two-operand form used by SSE. AVX instructions generally behave as
-if working on two independent 128 bit registers instead of one large 256 bit
+if working on two independent 128-bit registers instead of one large 256-bit
 register, this makes operations that combine bits from the lower 128 bits with
 bits from the upper 128 bits of the register more complex.
-\item[AVX-512] AVX 512 is a new instruction set extending the AVX registers to
+\item[AVX-512] AVX-512 is a new instruction set extending the AVX registers to
 512 bits. While it contains interesting new operations that could be very
 useful for implementing scans it was not available in general purpose CPUs at
 the time this thesis was written.
@@ -259,10 +259,10 @@ time.
 
 As a preliminary it is vital to understand how caches are organized on a
 current Intel CPU. Since for a scan data will almost always be loaded freshly
-from DRAM cache levels are ignored here. The cache on any recent Intel CPU is
+from DRAM, cache levels are ignored here. The cache on any recent Intel CPU is
 partitioned into cache lines of 64 bytes. This means that when reading data
-from memory it does not matter if 1 byte or 32 bytes, which is the maximum load
-size in AVX~2, are read at a time and the whole cache line will be fetched from
+from memory it does not matter if 1 byte or 32 bytes -- which is the maximum load
+size in AVX~2 -- are read at a time and the whole cache line will be fetched from
 DRAM.
 
 A scan over an array of integers of size 8, 16, 32 or 64 bits can be
@@ -272,7 +272,7 @@ the \texttt{pcmpgt} instruction takes two vectors and sets the corresponding
 element in a result vector to either all ones if the element in the first
 vector is greater than the element in the second vector. Otherwise it is set to
 zero. To generate a bit vector from this result the \texttt{movmsk} instruction
-is used which takes the most significant bit of every element in a vector and
+is used, which takes the most significant bit of every element in a vector and
 sets the bit with the same number in a simple integer. In the example the
 result of \texttt{movmsk} is $00111101$ in binary or $3d$ in hexadecimal.
 
@@ -333,13 +333,14 @@ methodology is comparable to a normal compression format where data is first
 decompressed in one step and then processed in another. The compression format
 stores a set of fixed-size integers without any padding. For decompression those
 individual integers have to distributed over the lanes of a SIMD vector. The
-main achievement of \simdscan{} is an efficient decompression method for every
-bit width from one to 32 bits. Due to limitations in Intel's vector extensions
-the performance of the bit case can vary though, with cases 8, 16 and 32 bit
-being trivial on SSE hardware as decompression is equivalent to a simple copy
-here. Other bit widths require varying amounts of arithmetic and logic operations
-to decompress. In practice every bit width is implemented manually to get an
-optimal sequence of instructions in a tight loop.
+main achievement of \simdscan{} is an efficient decompression method for all of
+the 32 bit cases from one bit to 32 bits. Due to limitations in Intel's vector
+extensions, the performance of the bit case can vary though, with cases 8, 16 and
+32 bit being trivial on SSE hardware as decompression is equivalent to a simple
+copy here. Other bit widths require varying amounts of arithmetic and logic
+operations to decompress. In practical implementations of \simdscan{} such as in
+the in-memory database SAP HANA every bit case is implemented manually to
+get an optimal sequence of instructions in a tight loop.
 
 \vspace{.5cm}
 
@@ -352,7 +353,7 @@ optimal sequence of instructions in a tight loop.
 
 The basic steps performed when evaluating a range predicate $\min < x < \max$
 with \simdscan{} are shown in Figure~\ref{fig:simdscan}. The example uses a bit
-width of 20 bits per word and a 256 bit vector register holding eight 32 bit
+width of 20 bits per word and a 256-bit vector register holding eight 32 bit
 values.  In a first step eight values (160 bits) are loaded from the table and
 permuted over the eight vector lanes. Because the permutation operation only
 works on byte boundaries the result of this step is not aligned on the 32 bit
@@ -363,21 +364,21 @@ loaded from the table, the reference constants $\min$ and $\max$ are shifted
 before entering the main loop avoiding some work. Then the permuted values are
 compared to the permuted $\min$ and $\max$ constants, yielding a bit vector
 similar to the process shown in Figure~\ref{fig:simplecomparesse}. Because a
-range predicate is evaluated the two comparison results are combined with an AND
+range predicate is evaluated, the two comparison results are combined with an AND
 operation and turned into a bit vector using the \texttt{movemask} instruction.
-This bit vector result is the written into the output buffer.
+This bit vector result is then written into the output buffer.
 
 \simdscan{} has greatly benefited from new instruction set extensions such as
-AVX~2 \cite{AVX2-Scan} and is likely to benefit from AVX~512 too as more general
+AVX~2 \cite{AVX2-Scan} and is likely to benefit from AVX~512 too, as more general
 shuffle and compare instructions have been added, reducing the amount of
 instructions needed for some bit widths.
 
-As will be shown in chapter~\ref{chapter:evaluation} the \simdscan{} is bound by
+As will be shown in Chapter~\ref{chapter:evaluation}, the \simdscan{} is bound by
 memory bandwidth alone for almost any bit width when using AVX~2 on a modern
 CPU. On Intel hardware this is a fairly new behavior that was not observed using
 plain SSE \cite{AVX2-Scan} and required a lot of manual optimization. This also
 means that \simdscan{} already has the best possible performance when all bits
-of a column are read. There are two possible changes to improve this.
+of a column are read. There are three possible strategies to improve this.
 
 \begin{itemize}
   \item Using a more complex compression scheme such as PFOR~\cite{PFOR} which
@@ -389,15 +390,15 @@ of a column are read. There are two possible changes to improve this.
   \item Using a variable-length encoding such as Simple-8~\cite{Simple8} or
     varint~\cite{varint} which store significantly fewer bits if an entry in the
     column is small. This complicates random access and makes fully utilizing
-    SIMD harder because SIMD instructions as described earlier are usually only
-    provided for fixed-size integers.
+    SIMD harder because SIMD instructions are usually only provided for
+    fixed-size integers.
   \item Trying to abort the scan before all bits are read. This is possible by
     modifying the storage format and performing the comparison of a word on
     smaller chunks than the full word size.
 \end{itemize}
 
-The following sections focus on exiting the scan early as this is most likely to
-have the lowest overhead of the three methods.
+The following sections focus on exiting the scan early, because this is most
+likely to have the lowest overhead of the three methods.
 
 \section{\emph{BitWeaving}}
 
@@ -415,11 +416,11 @@ version, \bwv{}.
 
 The horizontal form is based on ``SIMD within a register'' (SWAR) as first
 described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
-contiguously, similar to the format \simdscan{} uses except that a stop bit is
-added between every element, adding memory overhead. An example is shown in
+contiguously, similar to the format \simdscan{} uses, except that a stop bit is
+added between every element, thus adding memory overhead. An example is shown in
 Figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed but
 the arithmetic primitives used to do a comparison are decomposed and directly
-applied to the compressed data, which is different from \simdscan{}.
+applied to the compressed data. This approach is different from \simdscan{}.
 
 As \emph{BitWeaving/H} provides no significant advantage over \simdscan{} but
 adds additional memory overhead it was not taken into consideration. Knuth
@@ -435,7 +436,7 @@ together but distributed over many words. In memory this means that the most
 significant bits of all words are stored first, followed by the second-most
 significant bits and so on as seen in Figure~\ref{fig:bwv}. Scans are still
 implemented using a SWAR method on a bit-wise level. The difference is now that
-for a comparison operation the scan of a word is aborted after mismatch occurs
+for a comparison operation the scan of a word is aborted after a mismatch occurs
 for the first time. Any additional bits do not have to be read anymore. This
 behavior is called early pruning or early exiting.
 
@@ -449,7 +450,7 @@ behavior is called early pruning or early exiting.
 To derive a performance advantage out of the memory that is not read anymore the
 column is partitioned into a fixed amount of groups. This can be imagined as
 first storing the four most significant of all words first, in the vertical
-format. This forms the first partition or group. Then the fourth to eighth
+format. This forms the first partition or group. Then the fifth to eighth
 significant bits are stored in the next group and so on. Early pruning is
 performed after a full group is processed so the processor can take advantage of
 the sequential access without any interruption. This also reduces the likeliness
@@ -460,28 +461,28 @@ The major downside of this vertical format is the same that was seen when
 switching from row-wise to column-wise storage. Again, this is a trade-off
 between scan performance and the amount of work necessary to extract a row from
 the storage. As the bits of a single value are now distributed over many memory
-locations reading it becomes a lot slower.
+locations, reading it becomes a lot slower.
 
 \section{\bs{}}
 
 \bs{} \cite{ByteSlice} can be seen as a hybrid between vertical and horizontal
 bit packing formats. It is very similar to the \bwv{} format but does not
 distribute individual bits over multiple locations but only distributes bytes.
-Intel's SIMD extension have very efficient instructions for byte-level
+Intel's SIMD extensions have very efficient instructions for byte-level
 comparisons and permutations so this avoids complexity in the scan loop.
 
 This byte-level vertical format has several advantages over the bit-level
-vertical format. Packing and unpacking \bs{} data only has to touch one eighth
+vertical format. Packing and unpacking \bs{}d data only has to touch one eighth
 of the memory locations \bwv{} has to access. Furthermore, moving bytes in a
 vector register for packing and unpacking can be done using shuffle instructions
 in most SIMD instruction sets. Bit-level shuffling is usually not available.
 This allows very fast access of individual values without the high overhead in
 the \bwv{} format while still providing early pruning opportunities.
 
-When comparing early pruning it might seem like \bwv{} provides better pruning
+When comparing early pruning, it might seem like \bwv{} provides better pruning
 opportunities as aborting is possible after every bit in theory. \bs{} can only
 prune after quantities of eight bits have been processed. This is only partially
-true though because \bs{} contains fewer values per vector word so early pruning
+true though, because \bs{} contains fewer values per vector word so early pruning
 is more likely to occur, a single value in a vector word in either format can
 prevent early exiting. The grouping in \bwv{} also reduces the early pruning
 opportunities but this can also be applied to \bs{}. However, \bs{} group sizes
@@ -514,7 +515,7 @@ modern hardware and methods to perform scans on in-memory column stores.
 \simdscan{} is one method for scans that works very well on modern hardware,
 being only limited by the bandwidth from memory to the CPU core. \bwv{} and
 \bs{} are two techniques that look very promising as they are likely just as
-bound by memory bandwidth as \simdscan{} as their scans are not more complex in
+bound by memory bandwidth as \simdscan{} and their scans are not more complex in
 terms of instructions executed. However, these methods can extract additional
 advantages by using a more sophisticated memory layout to avoid reading all bits
 from memory and thus saving precious memory bandwidth.
@@ -524,7 +525,7 @@ details. This affects the number of branches executed, the probability of early
 pruning and the complexity of bringing data into the scan representation and
 vice-versa. This justifies a separate analysis of both approaches.
 
-In the rest of the thesis we will evaluate both in theory and with practically
-benchmarks how this early exiting performs when doing a scan. The performance
-analysis now contains a probabilistic component depending on the input data that
-was not necessary with \simdscan{}.
+In the rest of the thesis we will evaluate how this early exiting performs when
+doing a scan both in theory and with practical benchmarks. In contrast to
+\simdscan{} performance analysis now contains a probabilistic component
+depending on the input data.

@@ -104,7 +104,7 @@ congested load path.
   \EndProcedure
 \end{algorithmic}
 \caption{Duplicate bit number $b$ from a 32 bit integer over a
-full 256 bit vector}
+full 256-bit vector}
 \label{algo:splatbit}
 \end{algorithm}
 
@@ -115,7 +115,7 @@ directly available on AVX~2. A logical not ($\sim$) is not available in AVX~2
 but a combined \texttt{andnot} instruction can be used instead. This also
 reduces the total number of instructions needed. Early pruning can be
 conveniently implemented using a logical or and the \texttt{ptest} instruction
-in AVX~2, which compares a full 256 bit vector with zero and allows branching on
+in AVX~2, which compares a full 256-bit vector with zero and allows branching on
 the result.
 
 \begin{algorithm}[h]
@@ -132,7 +132,7 @@ the result.
         \If {Meq1 = 0 or Meq2 = 0}
           \State break \Comment{early pruning}
         \EndIf
-        \State Bits $\gets$ load one 256 bit word
+        \State Bits $\gets$ load one 256-bit word
         \State splatLower $\gets$ splatBit(lower, k)
         \State splatUpper $\gets$ splatBit(upper, k)
         \State Mgt $\gets$ Mgt \textbf{or} (splatLower \textbf{and} $\sim$(Meq1 \textbf{and} Bits))
@@ -172,7 +172,7 @@ available instruction sets.
   \Procedure{packBitWeaving}{uint32\_t *in, uint32\_t *out, int width, int num}
   \For {$i=0$ to $\frac{num}{256}$}
     \For {$j=0$ to $32$}
-      \State Bits $\gets$ load one 256 bit word from in
+      \State Bits $\gets$ load one 256-bit word from in
       \For {$k=0$ to width}
         \State Mask $\gets$ movemask(Bits << (32 - j)) \Comment{Extract 8 bits}
         \State Store Mask to the right position in \textbf{out}
@@ -219,7 +219,7 @@ instead of bits (Algorithm~\ref{algo:splatbyte}).
   \State \Return \_mm256\_set1\_epi8((uint8\_t)$w$) \Comment{broadcast $w$ over vector width}
   \EndProcedure
 \end{algorithmic}
-\caption{Duplicate byte number $b$ from a 32 bit integer over a full 256 bit vector}
+\caption{Duplicate byte number $b$ from a 32 bit integer over a full 256-bit vector}
 \label{algo:splatbyte}
 \end{algorithm}
 
@@ -252,7 +252,7 @@ bit value that is written to the output buffer.
       \If {Meq1 = 0 or Meq2 = 0}
         \State break \Comment{early pruning}
       \EndIf
-      \State Bits $\gets$ load one 256 bit word
+      \State Bits $\gets$ load one 256-bit word
       \State gt $\gets$ unsignedCompare(Bits, lower, $j$)
       \State lt $\gets$ unsignedCompare(upper, Bits, $j$)
       \State eq1 $\gets$ equalCompare(Bits, lower, $j$)
@@ -271,7 +271,7 @@ bit value that is written to the output buffer.
 \end{algorithm}
 
 Packing and unpacking into the \bs{} representation can be done extremely
-quickly on AVX~2. The basic idea for packing is to load a full 256 bit vector
+quickly on AVX~2. The basic idea for packing is to load a full 256-bit vector
 containing eight 32 bit integers. Then use vector shuffle instructions to
 rearrange the bytes of those integers to be clustered together, that means all
 most significant bytes are in the first 64 bits of the vector. Then up to four
@@ -289,7 +289,7 @@ This can be achieved with four shuffle instructions on AVX~2 and possibly less
 on AVX-512 as it contains more general shuffle instructions. The up to four 64
 bit values from the vector are then individually stored to the right positions
 in the output. This algorithm still is not perfect SIMD as it only stores 64 bit
-quantities. The arithmetic is performed on a full 256 bit word though which is
+quantities. The arithmetic is performed on a full 256-bit word though which is
 much faster than the eight bits of \bwv{} packing.
 
 For \bs{} unpacking and packing a single value only touches eight times fewer
@@ -299,7 +299,7 @@ cache lines as \bwv{}. This makes the transformation process much faster.
 \begin{algorithmic}[1]
   \Procedure{packByteSlice}{uint32\_t *in, uint32\_t *out, int width, int num}
   \For {$i=0$ to $\frac{num}{8}$}
-    \State Bits $\gets$ load one 256 bit word from in
+    \State Bits $\gets$ load one 256-bit word from in
     \State Bits $\gets$ shuffle(bits)
     \For {$j=\frac{width+7}{8}$ downto $0$}
       \State toStore $\gets$ extract 64 bits from \textbf{Bits} at position $j$
