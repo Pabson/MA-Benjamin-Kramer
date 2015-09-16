@@ -1,1 +1,45 @@
 \chapter{Introduction}
+
+The scan is one of the most basic primitives for building a database system. It
+searches over a column in the database and checks for every entry in the column
+whether it satisfies a predicate. The result is usually stored in a bit vector
+of the same size as the column, indicating the status of the predicate for
+every value, or a list of indexes.
+
+A scan is not a computationally intensive task but involves a lot of data so
+its performance is directly related to how fast the data can be loaded.
+Historically this meant that the scan runtime was equivalent to the speed of
+the available non-volatile memory, typically hard drives with magnetic rotating
+disks. In more recent time this the storage for the data has shifted from hard
+drives to main memory as it became cheaper. Main memory is orders of magnitudes
+faster than hard drives so the processor became the bottleneck. However,
+processors also became better -- at a much faster pace than main memory --
+so the processor gave its bottleneck position to main memory.
+
+This thesis focuses on that bottleneck and explores ways to reduce the required
+bandwidth from main memory without shifting the bottleneck back to the
+processor.
+
+\section{Motivation and Goals}
+
+The main motivation of this thesis is to explore and evaluate the use of modern
+hardware technologies to accelerate scans. It builds upon existing research
+results to reduce memory bandwidth such as \emph{BitWeaving}~\cite{BitWeaving}
+and \simdscan{}~\cite{SIMD-Scan} and evaluate their effect on modern hardware
+platforms and for different workloads.
+
+The goal is to develop strategies to optimize the scan operation to leverage
+the full capabilities of modern hardware.
+
+\section{Thesis Structure}
+
+Following this introduction chapter, Chapter~\ref{chapter:background} discusses
+the theoretical background of the problems faced with fast scan algorithm and
+introduces several improved scan approaches. Chapter~\ref{chapter:analysis}
+tries to quantify the improvements and shows in which cases they work and in
+which cases they will not. Details on the implementation of the scan algorithms
+are laid down in Chapter~\ref{chapter:implementation} which is directly
+followed by measurements and analysis of the results in
+Chapter~\ref{chapter:evaluation}. The concluding
+Chapter~\ref{chapter:conclusions} summarizes the achieved work and benchmark
+results and points out directions for the future.
