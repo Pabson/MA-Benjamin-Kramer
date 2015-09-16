@@ -4,7 +4,7 @@ In this chapter a benchmarking framework is introduced that allows comparing the
 three implementations of a scan
 
 \begin{itemize}
-  \item \simdscan{} SAP proprietary using AVX~2
+  \item \simdscan{} (SAP proprietary) using AVX~2
   \item \bwv{} custom implementation using AVX~2
   \item \bs{} custom implementation using AVX~2
 \end{itemize}
@@ -16,20 +16,21 @@ in~\cite{AVX2-Scan}. It contains the infrastructure to execute scans using
 SAP's \simdscan{} and provides integration with Intel's \emph{Performance
 Counter Monitor} (PCM)~\cite{intelpcm} to gather data from the various
 performance counters in the CPU core. It also contains code to run and validate
-a range predicate on a chunk of memory and storing the result as a bit vector,
-which could be partially reused.
+a range predicate on a chunk of memory and to store the result as a bit vector,
+that code could be reused partially. A random number generator is also present.
 
 It was upgraded to use the latest available version of \simdscan{} from HANA
 which contains additional optimizations over those described in the paper.
 Support for benchmarking \bwv{} and \bs{} was added, including a new
-benchmarking mode for unpacking data from the vertical layout.
+benchmarking mode for unpacking data from the vertical layout. The benchmarking
+modes in detail are
 
 \begin{description}
 \item[range scan to bit vector]
   A column of uniformly distributed random 32 bit integers is generated and
-  brought into the representation needed for the scanning algorithm under a
+  brought into the representation required for the scan algorithm under a
   given bit width. A range predicate of the form $0 \le x < max$ is created,
-  where $max$ is chosen based on the selectivity, e.g.  a selectivity of
+  where $max$ is chosen based on the selectivity, e.\,g., a selectivity of
   $50\,\%$ with eight-bit values would result in the predicate $0 \le x < 128$.
   The scan is executed once and compared with a scalar version of the algorithm
   to ensure correctness, both algorithms produce a bit vector result. Then the
@@ -37,12 +38,12 @@ benchmarking mode for unpacking data from the vertical layout.
   result is reported.
 
   This is repeated for a range of selectivities from $100\,\%$ to $0\,\%$ and
-  for all bit widths from $1$ to $32$ for \simdscan{} and \bwv{}, for \bs{} only
-  8, 16, 24 and 32 bits are used. The size of a column was fixed at $2^{25}$
-  items.
+  for all bit widths from $1$ to $32$ for \simdscan{} and \bwv{}. For \bs{} only
+  8, 16, 24 and 32 bits are used. The size of a column was fixed at
+  $2^{25}=33\,554\,432$ items.
 
 \item[equality scan to bit vector]
-  This mode is very similar to the range scan but uses a predicate of the form
+  This mode is very similar to the range scan but uses a predicate, of the form
   $x = c$, where $c$ is a random constant. Since the selectivity cannot be
   enforced via the predicate the input data is altered to contain $c$ at random
   positions under a uniform distribution. The number of $c$s in the result is
@@ -50,30 +51,30 @@ benchmarking mode for unpacking data from the vertical layout.
   same methods as the range scan.
 
 \item[multi-column scan]
-  To measure the impact of block-wise scanning a multi-column mode was added
+  To measure the impact of block-wise scanning, a multi-column mode was added
   that partitions the randomly generated input data chunk into multiple
-  columns. On those columns the predicates described above are used. Columns
+  columns. On those columns, the predicates described above are used. Columns
   can be scanned in its entirety (block size is infinite) or with smaller
-  block sizes. The results are combined with a logical and operation.
+  block sizes. The results are combined with a logical \emph{and} operation.
 
   It turned out that $2^{25}$ items were insufficient to completely remove
-  caching effects from the results so the number of items was later raised to
-  $2^{30}$ items for all columns combined.
+  caching effects, so the number of items was later raised to $2^{30}$ items for
+  all columns combined.
 
-  Since a logical and is used to combine the results early pruning was not used
-  in between columns for this benchmark. Pruning between columns with an and
-  predicate becomes very sensitive to the selectivities of the individual
-  columns as they multiply from column to column, distorting the results per
-  column.
+  Since a logical \emph{and} is used to combine the results, early pruning was
+  not used in between columns for this benchmark. Pruning between columns with
+  an \emph{and} predicate becomes very sensitive to the selectivities of the
+  individual columns as they multiply from column to column, distorting the
+  results per column.
 
 \item[packing]
-  This benchmarking mode generates another chunk of 32 bit integers which are
-  then brought into the format used by the scan algorithm. For \simdscan{}
-  packing (and unpacking) is performed using the FastPFOR library by D. Lemire
-  et al~\cite{fastpfor}, \bwv{} and \bs{} use
-  custom packing routines. The runtime of the packing is measured with PCM.
+  This benchmarking mode generates a chunk of 32 bit integers which are then
+  brought into the format used by the scan algorithm. \simdscan{} packing (and
+  unpacking) is performed using the FastPFOR library by D. Lemire et
+  al~\cite{fastpfor}, \bwv{} and \bs{} use custom packing routines. The runtime
+  of packing is measured with PCM.
 
-  The packing is executed for all bit widths from 1 to 32. For \bs{} zero
+  Packing is executed for all bit widths from 1 to 32. For \bs{} zero
   padding is added for cases not evenly divisible by eight. Not the entire
   column is unpacked but only slices. The benchmark tests multiple slice sizes
   from $256$ items to $2^{25}$ items.
@@ -86,7 +87,7 @@ benchmarking mode for unpacking data from the vertical layout.
 
 \section{AVX~2 \bwv{} Implementation}
 
-To have a fair comparison a clean-room implementation of the \bwv{} scan
+To have a fair comparison, a clean-room implementation of the \bwv{} scan
 algorithm was implemented in C++ using AVX~2 compiler intrinsics. Implementing
 the scan itself was rather straight forward and only minor deviations from the
 suggested implementation in the paper were made. The most significant change is
@@ -120,7 +121,7 @@ the result.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
-  \Procedure{ByteSliceScan}{uint32\_t upper, uint32\_t lower, \_\_m256i *out,
+  \Procedure{BitWeavingScan}{uint32\_t upper, uint32\_t lower, \_\_m256i *out,
   int width, int num, int numGroups, int groupSize}
   \For {$i=0$ to $\frac{num}{256}$}
     \State Mlt $\gets 0$
@@ -154,18 +155,22 @@ and pack the input data into the format required by the \bwv{} scan. For packing
 the \texttt{movmskps} instruction was used combined with vector shifts. This
 processes eight 32 bit integers at the same time but is still slow as a lot of
 memory is touched. Since there is no reverse operation of \texttt{movmskps} in
-the AVX~2 instruction set unpacking was implemented by replicating the bits of a
+the AVX~2 instruction set, unpacking was implemented by replicating the bits of a
 single value over a full vector and using shifts and masking. The basic idea is
 shown in Algorithm~\ref{algo:packbwv}.
 
-Packing and unpacking is generally very slow for \bwv{} as unpacking a single
-value has to touch as many cache lines as there are bits in the value. This is a
-significant disadvantage in comparison with the other methods.While the
-algorithm looks extremely simple, it is much slower than the scanning algorithm.
-The parallelism here is very limited because the innermost loop only processes 8
-bits at a time which is extremely low for SIMD code. This code is already fairly
-optimized and there is not much improvement possible with the currently
-available instruction sets.
+Packing and unpacking is generally very slow for \bwv{}, because unpacking a
+single value has to touch as many cache lines as there are bits in the value.
+This is a significant disadvantage in comparison with the other methods.While
+the algorithm looks extremely simple, it is much slower than the scanning
+algorithm.  The parallelism here is very limited because the innermost loop only
+processes 8 bits at a time which is extremely low for SIMD code. This code is
+already fairly optimized and there is not much improvement possible with the
+currently available instruction sets. AVX~2 contains limited support for
+gathering and scattering bits using the \texttt{pdep} and \texttt{pextr}
+instructions, but those work on 64-bit words instead of 256-bit vectors and did
+not improve the runtime of packing. A full 256-bit bit-wise version of those
+instructions could improve the situation.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -189,9 +194,9 @@ available instruction sets.
 
 In contrast to the \bwv{} scan the \bs{} turned out to be trickier to implement
 due to limitations in the AVX~2 instruction set that were not described in the
-\bs{} paper. The implementation relies on unsigned integer comparisons but AVX~2
+\bs{} paper. The implementation relies on unsigned integer comparisons, but AVX~2
 only supplies signed versions. To turn the signed versions into unsigned
-compares all sign bits are flipped as illustrated in
+compares, all sign bits are flipped as illustrated in
 Algorithm~\ref{algo:cmpunsigned}. This adds more instructions to the main scan
 loop than earlier anticipated.
 
@@ -225,20 +230,21 @@ instead of bits (Algorithm~\ref{algo:splatbyte}).
 
 Putting it all together we end up with the full scan in
 Algorithm~\ref{algo:byteslicescan}. The only addition is \texttt{equalCompare}
-which is the same as \texttt{unsignedCompare} with the greater than comparison
-replaced by equality. By inlining the compare functions into the scan loop some
-redundant work can be eliminated but this predicate is significantly more
-complex than the same predicate implemented in \bwv{}. This is primarily due to
-the lack of unsigned vector compares in AVX~2 which have to be emulated with
-multiple instructions. As the instruction budget to stay limited by memory
-bandwith is very tight this may be a disadvantage over other scan algorithms.
-The next version of AVX, AVX-512 will include unsigned comparisons, eliminating
-this issue altogether. Just as with \bwv{}, early pruning can be conveniently
-implemented using a single or instruction followed by AVX~2's \texttt{ptest}.
-This scan loop also processes 256 bits at a time but only 32 values
-concurrently. As the loop is not as nested as \bwv{} the early pruning branch is
-executed more often. \texttt{movemask} compresses the result vector into a 32
-bit value that is written to the output buffer.
+which is the same as \texttt{unsignedCompare} with the \emph{greater than}
+comparison replaced by \emph{equality}. By inlining the compare functions into
+the scan loop, some redundant work can be eliminated, but this predicate is
+significantly more complex than the same predicate implemented in \bwv{}. This
+is primarily due to the lack of unsigned vector compares in AVX~2, which have to
+be emulated with multiple instructions. As the instruction budget to stay
+limited by memory bandwith is very tight, this may be a disadvantage over other
+scan algorithms.  The next version of AVX, AVX-512 will include unsigned
+comparisons, eliminating this issue altogether. Just as with \bwv{}, early
+pruning can be conveniently implemented using a single \emph{or} instruction
+followed by AVX~2's \texttt{ptest}.  This scan loop also processes 256 bits at a
+time but only 32 values concurrently. As the loop is not as nested as \bwv{},
+the early pruning branch is executed more often. Operation \texttt{movemask}
+compresses the result vector into a 32 bit value that is written to the output
+buffer.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]
@@ -273,7 +279,7 @@ bit value that is written to the output buffer.
 Packing and unpacking into the \bs{} representation can be done extremely
 quickly on AVX~2. The basic idea for packing is to load a full 256-bit vector
 containing eight 32 bit integers. Then use vector shuffle instructions to
-rearrange the bytes of those integers to be clustered together, that means all
+rearrange the bytes of those integers to be clustered together. That means all
 most significant bytes are in the first 64 bits of the vector. Then up to four
 64 bit integers are extracted from that vector and stored at the corresponding
 positions in the output buffer. This only touches five memory locations, reading
@@ -286,14 +292,14 @@ by their byte number. The first 64 bit integer of the vector then contains the
 most significant bytes of the eight 32 bit integers that were loaded from
 memory. The next 64 word contains the second-most significant bytes and so on.
 This can be achieved with four shuffle instructions on AVX~2 and possibly less
-on AVX-512 as it contains more general shuffle instructions. The up to four 64
+on AVX-512, as it contains more general shuffle instructions. The up to four 64
 bit values from the vector are then individually stored to the right positions
 in the output. This algorithm still is not perfect SIMD as it only stores 64 bit
 quantities. The arithmetic is performed on a full 256-bit word though which is
 much faster than the eight bits of \bwv{} packing.
 
 For \bs{} unpacking and packing a single value only touches eight times fewer
-cache lines as \bwv{}. This makes the transformation process much faster.
+cache lines than \bwv{}. This makes the transformation process much faster.
 
 \begin{algorithm}[h]
 \begin{algorithmic}[1]

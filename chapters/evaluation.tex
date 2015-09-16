@@ -2,7 +2,7 @@
 \label{chapter:evaluation}
 
 After laying down the theoretical analysis of the scan algorithms and providing
-an efficient implementation it is time to verify whether the expectations hold
+an efficient implementation, it is time to verify whether the expectations hold
 up in reality. This chapter does so with a focus on six basic questions.
 
 \begin{enumerate}
@@ -35,7 +35,7 @@ DRAM controller was measured from the CPU performance counters using Intel PCM.
 \section{Comparing \simdscan{} to \bwv{}}
 
 The first and most important evaluation result will be a direct comparison
-between \simdscan{} and \bwv{}. As seen in Figure~\ref{fig:eval:bwvsimdb8}. In
+between \simdscan{} and \bwv{}, as seen in Figure~\ref{fig:eval:bwvsimdb8}. In
 this configuration early pruning was performed after reading 4 bits as
 suggested in~\cite{BitWeaving}.
 
@@ -82,7 +82,7 @@ runs over $2^{25}$ random integers. \bwv{} group size is four.}
 
 As described earlier the benchmark was run with multiple selectivities, which
 are represented as a stack of markers in this chart. Since selectivity has
-virtually no impact on the runtime of \simdscan{} the variance between the
+virtually no impact on the runtime of \simdscan{}, the variance between the
 selectivities can be interpreted as an indicator for the noise level. The read
 bandwidth used by \simdscan{} is approximately 11 gigabytes per second and
 scales linearly over all bit widths with only a few exceptions. 11 gigabytes
@@ -94,7 +94,7 @@ different parts.
 
 \begin{itemize}
   \item Bit widths $0-8$: due to the large amount of last-level cache
-  available not all of the memory is read from DRAM but was kept in the cache
+  available, not all of the memory is read from DRAM but was kept in the cache
   over multiple iterations. This skews the result, however there is virtually
   no difference in scan performance between \simdscan{} and \bwv{}. Early
   pruning can theoretically abort the scan after four or eight bits but the
@@ -111,11 +111,11 @@ different parts.
   over \bwv{}.
   \item Bit width $20-32$: Early pruning is very effective and beats the
   runtime of \simdscan{} with a growing margin. The performance curve is
-  entirely flat and will stay the same if the bit width is extended any further.
+  entirely flat and will stay the same if the bit width is extended further.
   \bwv{} is the preferable algorithm for this kind of scan.
 \end{itemize}
 
-All in all this benchmark shows that \bwv{} can beat \simdscan{}, but it is not
+All in all, this benchmark shows that \bwv{} can beat \simdscan{}, but it is not
 always a clear win. It provides no advantage over \simdscan{} at low bit widths
 and is slower at medium bit widths. Only at relatively large bit widths early
 pruning can make up its own overhead and provide an advantage that grows larger
@@ -129,7 +129,7 @@ used for those benchmarks as it is very competitive.
 As seen in the last graphs there is a significant overhead in the area around
 16 bits when comparing \bwv{} with \simdscan{}. This overhead comes from the
 additional branching that has to be performed at every early pruning step. To
-reduce the amount of branching one possible tweak is to reduce the number of
+reduce the amount of branching, one possible tweak is to reduce the number of
 bits that are processed without early pruning. This diminishes the
 effectiveness of early pruning though. For the benchmark in
 Figure~\ref{fig:eval:bwvsimdbgroups} early pruning was performed after every 4,
@@ -180,13 +180,13 @@ runs over $2^{25}$ random integers. Varying group sizes.}
 \label{fig:eval:bwvsimdbgroups}
 \end{figure}
 
-As expected smaller group sizes work better with regard to the number of bytes
+As expected, smaller group sizes work better with regard to the number of bytes
 read from DRAM as early pruning is a lot more effective. The impact on
 performance is very small though, the expected improvement due to fewer
 mispredicted branches is not visible. Nullifying the overhead does not seem
 possible.
 
-As the difference is very small a block size of eight was chosen for the
+As the difference is very small, a block size of eight was chosen for the
 following experiments, as it compares better to \bs{} which has an intrinsic
 group size of eight due to processing values at the byte level.
 
@@ -201,13 +201,13 @@ though the pruning works better for case $24$ the runtime performance is much
 worse. The gap can be reduced by using a simpler predicate, for example in
 Figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
 predicate is a small subset of the range predicate so the amount of arithmetic
-performed during the scan is significantly lower.  While much narrower even this
+performed during the scan is significantly lower.  While much narrower, even this
 was not enough to eliminate the performance advantage of \bwv{} over \bs{}. A
 possible explanation for this behavior is the increased number of branch
 instructions executed by \bs{}. While \bwv{} branches after every $n$ 256-bit
 words read, where $n$ is the group size, \bs{} checks for early exit after every
 256-bit word. This makes pruning more effective at the cost of more branching.
-It would be possible to add groups to \bs{} but since it works on bytes the
+It would be possible to add groups to \bs{} but since it works on bytes, the
 group size must be a multiple of eight, severely limiting early pruning
 opportunities, so this method was not tried.
 
@@ -324,7 +324,7 @@ rarely. As a reminder, for the used predicate of the form $x\le y < z$ the worst
 case is triggered when $y$ is either equal to $x$ or $z$. So for the next
 benchmark this worst case will be investigated. For reasons of simplicity an
 equality predicate was used, but the observation also applies to any inequality
-or range predicate. Only 8, 16, 24 and 32 bits are evaluated because others are
+or range predicate. Only 8, 16, 24 and 32 bits are evaluated, because others are
 not directly supported by \bs{}. The results in runtime and DRAM reads are
 plotted in Figure~\ref{fig:eval:equalbig}.
 
@@ -427,12 +427,12 @@ between $100\,\%$ and $0\,\%$.}
     as \simdscan{}. The performance represents the maximum amount of data one
     CPU core can process at the given time, so any other algorithm can not be
     faster unless it reads less data.
-  \item When the same amount of data is read the performance of \bwv{} tends to
-    be almost identical to \simdscan{}. On the one hand this equality predicate
-    does very little arithmetic work compared the range predicate shown earlier
-    on the other hand early pruning does not work well so the early exit branch
-    can be easily predicted by the hardware.
-  \item Early pruning is more effective for \bs{} than for \bwv{} but
+  \item When the same amount of data is read, the performance of \bwv{} tends to
+    be almost identical to \simdscan{}. On the one hand, the equality predicate
+    requires very little arithmetic work compared to the range predicate shown
+    earlier. On the other hand early pruning does not work well so the early exit
+    branch can be easily predicted by the hardware.
+  \item Early pruning is more effective for \bs{} than for \bwv{}, but
     performance tends to be slightly worse. The implementation of \bs{} is not
     entirely memory bound like \simdscan{} and \bwv{} are.
 \end{itemize}
@@ -491,11 +491,11 @@ width 32.}
 \label{fig:eval:equalbigselectivity}
 \end{figure}
 
-The graph clearly shows the early pruning patterns calculated in
+The graph clearly illustrates the early pruning patterns calculated in
 Chapter~\ref{chapter:analysis}. The bit width of 32 bits is also rather large so
 early pruning can work decently here and the branch overhead does not penalize
 \bwv{} in comparison to \simdscan{}. For \bs{} the situation looks a bit
-different though as there are obvious deficiencies in performance here.
+different though, as there are obvious deficiencies in performance here.
 
 \section{Packing and Unpacking}
 
@@ -558,7 +558,7 @@ representations and the reverse. 256 values were transformed at a time.}
 
 The most obvious issue is that \bwv{} is orders of magnitudes slower than the
 other two representations. This is due to the amount of arithmetic needed to
-extract and insert individual bits while manipulating fully bytes or more can be
+extract and insert individual bits while manipulating full bytes or more can be
 done much more efficiently with shifts and vector shuffles. It should also be
 noted that packing is more expensive than unpacking in this scenario.
 
@@ -636,7 +636,7 @@ method is not recommended for any type of scan.
     scaled ticks=false,
     grid
 ]
-\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_4col.csv};
+\addplot+ [line width=2pt] table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_4col.csv};
 \addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_1024_4col.csv};
 %\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_4col.csv};
 \addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_inf_4col.csv};
@@ -648,7 +648,7 @@ method is not recommended for any type of scan.
 \label{fig:eval:bwvblocks4}
 \end{figure}
 
-The next graph in Figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
+The graph in Figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
 and $1024$ with an infinite block size. There is a small performance benefit of
 this method but it is not very pronounced, as calculated in
 Chapter~\ref{chapter:analysis}. What does not match the analysis is that the
@@ -688,7 +688,7 @@ effect is most likely due to cache effects.
     scaled ticks=false,
     grid
 ]
-\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_16col.csv};
+\addplot+ [line width=2pt] table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_256_16col.csv};
 \addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_1024_16col.csv};
 %\addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_100000_16col.csv};
 \addplot+ table[header=false,col sep=semicolon, x index=2, y index=9] {data/BWV_blocked_big_inf_16col.csv};
@@ -704,14 +704,14 @@ Figure~\ref{fig:eval:bwvblocks16} shows the same scan but this time the data was
 distributed over 16 columns. This has a catastrophic effect on scan performance
 because the memory prefetching of the used Haswell CPU cannot cope with this
 many streams, effectively removing the performance advantage of sequential
-access. The amount of written data is much lower for this test case though, the
-amount of input data was the same overall but more of the results were
-intermediate ones compared to the four column case. The intermediate results
-fit in cache for small bit widths here leading to a curved graph for the
-infinite block size, this will not happen for larger data sets.
+access. The amount of written data is much lower for this test case though. In
+both tests the amount of input data was the same overall, but more of the
+results were intermediate ones compared to the four column case. The
+intermediate results fit in cache for small bit widths here leading to a curved
+graph for the infinite block size, this will not happen for larger data sets.
 
-Once the prefetcher ceased to work there is also a visible advantage of using
-larger block sizes, in this case $1024$ performed significantly better than
+Once the prefetcher ceased to work, there is also a visible advantage of using
+larger block sizes. In this case $1024$ performed significantly better than
 $256$ as there is some sequential access left that the CPU can recognize. This
 lead to the next test that uses a vastly larger block size of $2^{17}$ which is
 tested in Figure~\ref{fig:eval:bwvblocks100k} with a larger data set.
