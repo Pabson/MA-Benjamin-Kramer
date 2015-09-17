@@ -6,8 +6,8 @@ an efficient implementation, it is time to verify whether the expectations hold
 up in reality. This chapter does so with a focus on six basic questions.
 
 \begin{enumerate}
-  \item Can the early pruning in \bwv{} beat the performance of \simdscan{}
-despite of branching overhead?
+  \item Can the early pruning in \bwv{} beat the performance of \simdscan{},
+despite the branching overhead?
   \item How large is this branching overhead?
   \item Is the early pruning probability difference of \bwv{} and \bs{} visible in practice?
   \item What is the impact of predicate selectivity on early pruning?
@@ -773,7 +773,7 @@ was done on that data.
 
 \begin{enumerate}
   \item \emph{Can the early pruning in \bwv{} beat the performance of
-    \simdscan{} despite of branching overhead?}\\
+    \simdscan{}, despite the branching overhead?}\\
     Yes, but not for all bit widths.  On the tested machine the branching
     overhead is largest around a bit width of 16 and amortizes if the bit width
     gets larger. For bit widths around 32 bits \bwv{} has a significant advantage
