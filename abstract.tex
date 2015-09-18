@@ -1,2 +1,25 @@
 \begin{abstract}
+In recent years, hardware characteristics, software systems, and application
+patterns have all changed in a way that emphasizes the importance of scan tasks
+in modern main-memory database systems. Main memory is available cheaply and
+can hold significant amounts of data. In-memory computing has matured and has
+resulted in key business platforms such as SAP HANA. Expectations for ad hoc
+querying defeat the use of pre-built index structures and mandate scans instead.
+
+At the same time, it is still unclear how the latest advances on the hardware
+side can best be leveraged to support efficient scans. Growing SIMD widths, for
+instance, appeal with theoretical speed-ups of up $16\times$ or more. But
+existing strategies for predicate evaluation and scans are not prepared for such
+large SIMD widths. In fact, even for smaller SIMD sizes it is not clear how,
+e.~g., predicates that involve multiple data types and widths can be realized
+most efficiently.
+
+This thesis studies and evaluates methods that use use of modern hardware
+technologies to accelerate scans, in particular \simdscan{}, \emph{BitWeaving}
+and \bs{}. Starting from \simdscan{} methods to further reduce memory bandwidth
+are explored by skipping parts of the input efficiently and by reducing the
+output size by handling intermediate results more efficiently.
+
+\vspace{2cm}\noindent
+
 \end{abstract}
