@@ -6,19 +6,19 @@ whether it satisfies a predicate. The result is usually stored in a bit vector
 of the same size as the column, indicating the status of the predicate for
 every value, or a list of indexes.
 
-A scan is not a computationally intensive task but involves a lot of data so
+A scan is not a computationally intensive task, but involves a lot of data so
 its performance is directly related to how fast the data can be loaded.
 Historically this meant that the scan runtime was equivalent to the speed of
 the available non-volatile memory, typically hard drives with magnetic rotating
-disks. In more recent time this the storage for the data has shifted from hard
+disks. In more recent time the storage for the data has shifted from hard
 drives to main memory as it became cheaper. Main memory is orders of magnitudes
 faster than hard drives so the processor became the bottleneck. However,
 processors also became better -- at a much faster pace than main memory --
 so the processor gave its bottleneck position to main memory.
 
-This thesis focuses on that bottleneck and explores ways to reduce the required
-bandwidth from main memory without shifting the bottleneck back to the
-processor.
+This thesis focuses on that bottleneck with respect to fast column cans and
+explores ways to reduce the required bandwidth from main memory without shifting
+the bottleneck back to the processor.
 
 \section{Motivation and Goals}
 
@@ -29,7 +29,9 @@ and \simdscan{}~\cite{SIMD-Scan} and evaluate their effect on modern hardware
 platforms and for different workloads.
 
 The goal is to develop strategies to optimize the scan operation to leverage
-the full capabilities of modern hardware.
+the full capabilities of modern hardware. This includes identifying the
+critical bottlenecks of existing scanning approaches and coming up with
+strategies to reduce the load at those critical points.
 
 \section{Thesis Structure}
 

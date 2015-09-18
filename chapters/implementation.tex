@@ -28,7 +28,7 @@ modes in detail are
 
 \begin{description}
 \item[range scan to bit vector]
-  A column of uniformly distributed random 32 bit integers is generated and
+  A column of uniformly distributed random 32-bit integers is generated and
   brought into the representation required for the scan algorithm under a
   given bit width. A range predicate of the form $0 \le x < max$ is created,
   where $max$ is chosen based on the selectivity, e.\,g., a selectivity of
@@ -69,7 +69,7 @@ modes in detail are
   results per column.
 
 \item[packing]
-  This benchmarking mode generates a chunk of 32 bit integers which are then
+  This benchmarking mode generates a chunk of 32-bit integers which are then
   brought into the format used by the scan algorithm. \simdscan{} packing (and
   unpacking) is performed using the FastPFOR library by D. Lemire et
   al~\cite{fastpfor}, \bwv{} and \bs{} use custom packing routines. The runtime
@@ -82,7 +82,7 @@ modes in detail are
 
 \item[unpacking]
   Same as packing, but in this case integers are unpacked from the
-  scan-specific representation into an array of 32 bit integers. Otherwise the
+  scan-specific representation into an array of 32-bit integers. Otherwise the
   configuration is identical to the packing benchmark.
 \end{description}
 
@@ -105,7 +105,7 @@ congested load path.
   \State \Return \_mm256\_set1\_epi32($w$) \Comment{broadcast $w$ over vector width}
   \EndProcedure
 \end{algorithmic}
-\caption{Duplicate bit number $b$ from a 32 bit integer over a
+\caption{Duplicate bit number $b$ from a 32-bit integer over a
 full 256-bit vector}
 \label{algo:splatbit}
 \end{algorithm}
@@ -154,7 +154,7 @@ the result.
 The most complex part of the implementation was designing a fast way to unpack
 and pack the input data into the format required by the \bwv{} scan. For packing
 the \texttt{movmskps} instruction was used combined with vector shifts. This
-processes eight 32 bit integers at the same time but is still slow as a lot of
+processes eight 32-bit integers at the same time but is still slow as a lot of
 memory is touched. Since there is no reverse operation of \texttt{movmskps} in
 the AVX~2 instruction set, unpacking was implemented by replicating the bits of a
 single value over a full vector and using shifts and masking. The basic idea is
@@ -164,7 +164,7 @@ Packing and unpacking is generally very slow for \bwv{}, because unpacking a
 single value has to touch as many cache lines as there are bits in the value.
 This is a significant disadvantage in comparison with the other methods.While
 the algorithm looks extremely simple, it is much slower than the scanning
-algorithm.  The parallelism here is very limited because the innermost loop only
+algorithm.  The parallelism here is very limited, because the innermost loop only
 processes 8 bits at a time which is extremely low for SIMD code. This code is
 already fairly optimized and there is not much improvement possible with the
 currently available instruction sets. AVX~2 contains limited support for
@@ -187,7 +187,7 @@ instructions could improve the situation.
   \EndFor
   \EndProcedure
 \end{algorithmic}
-\caption{Simplified \bwv{} pack algorithm, from 32 bit integers}
+\caption{Simplified \bwv{} pack algorithm, from 32-bit integers}
 \label{algo:packbwv}
 \end{algorithm}
 
@@ -215,7 +215,7 @@ loop than earlier anticipated.
 \end{algorithm}
 
 The byte extraction and duplication is also implemented differently from the
-paper. It uses the same method as the \bwv{} implementation but adapted to bytes
+paper. It uses the same method as the \bwv{} implementation, but adapted to bytes
 instead of bits (Algorithm~\ref{algo:splatbyte}).
 
 \begin{algorithm}[h]
@@ -225,7 +225,7 @@ instead of bits (Algorithm~\ref{algo:splatbyte}).
   \State \Return \_mm256\_set1\_epi8((uint8\_t)$w$) \Comment{broadcast $w$ over vector width}
   \EndProcedure
 \end{algorithmic}
-\caption{Duplicate byte number $b$ from a 32 bit integer over a full 256-bit vector}
+\caption{Duplicate byte number $b$ from a 32-bit integer over a full 256-bit vector}
 \label{algo:splatbyte}
 \end{algorithm}
 
@@ -244,7 +244,7 @@ pruning can be conveniently implemented using a single \emph{or} instruction
 followed by AVX~2's \texttt{ptest}.  This scan loop also processes 256 bits at a
 time but only 32 values concurrently. As the loop is not as nested as \bwv{},
 the early pruning branch is executed more often. Operation \texttt{movemask}
-compresses the result vector into a 32 bit value that is written to the output
+compresses the result vector into a 32-bit value that is written to the output
 buffer.
 
 \begin{algorithm}[h]

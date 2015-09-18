@@ -103,24 +103,24 @@ processes more expensive.
 \end{itemize}
 
 In the end, a fairly limited subset of a vector processor's instruction set has
-found its way into the instructions set of virtually any commodity processor but
-those geared towards low-performance embedded applications. These so-called
-multimedia instructions only support fixed-size registers which can usually be
-overlaid with different data types. For example registers containing 128 bits
-can be used as either four 32-bit values or eight 16 bit values. This means
-there are many different instructions compared to the approach taken by vector
-architectures.  Scattering and gathering is usually not present or only in a
-limited form by loading values separated by a constant gap.  Examples for this
-form of vector instructions are MMX, SSE and AVX on Intel CPUs, AltiVec on
-PowerPC or NEON on ARM processors.
+found its way into the instructions set of virtually any commodity processor,
+except those that are geared towards low-performance embedded applications.
+These so-called multimedia instructions only support fixed-size registers which
+can usually be overlaid with different data types. For example registers
+containing 128 bits can be used as either four 32-bit values or eight 16-bit
+values. This means there are many different instructions compared to the
+approach taken by vector architectures.  Scattering and gathering is usually not
+present or only in a limited form by loading values separated by a constant gap.
+Examples for this form of vector instructions are MMX, SSE and AVX on Intel
+CPUs, AltiVec on PowerPC or NEON on ARM processors.
 
 To understand why SIMD still provides an advantage over superscalar
 instruction-level parallelism the latency and throughput of normal instructions
 has to be taken into account. In Table~\ref{tab:latencies} the latencies and
 throughput for loads and additions are shown. Now imagine a loop creating a sum
 over 32-bit values; requiring a load and an add. All instructions are fully
-pipelined so we can load two 32 bit integers and perform two additions per
-cycle, the full throughput is not achievable because we cannot load more than
+pipelined so we can load two 32-bit integers and perform two additions per
+cycle, the full throughput is not achievable, because we cannot load more than
 two values. Now we change the loop to work on 256-bit vectors, the load
 throughput does not change with size so we can load 16 32-bit integers per cycle
 and still perform 2 full adds, adding all 16 integers. In theory we now
@@ -354,10 +354,10 @@ get an optimal sequence of instructions in a tight loop.
 
 The basic steps performed when evaluating a range predicate $\min < x < \max$
 with \simdscan{} are shown in Figure~\ref{fig:simdscan}. The example uses a bit
-width of 20 bits per word and a 256-bit vector register holding eight 32 bit
+width of 20 bits per word and a 256-bit vector register holding eight 32-bit
 values.  In a first step eight values (160 bits) are loaded from the table and
 permuted over the eight vector lanes. Because the permutation operation only
-works on byte boundaries the result of this step is not aligned on the 32 bit
+works on byte boundaries the result of this step is not aligned on the 32-bit
 boundaries.  The next step would now be to shift the individual values to the
 boundaries resulting in an aligned vector, but here a different approach is
 taken. Since only comparisons are performed instead of shifting the values
@@ -391,7 +391,7 @@ of a column are read. There are three possible strategies to improve this.
   \item Using a variable-length encoding such as Simple-8~\cite{Simple8} or
     varint~\cite{varint} which store significantly fewer bits if an entry in the
     column is small. This complicates random access and makes fully utilizing
-    SIMD harder because SIMD instructions are usually only provided for
+    SIMD harder, because SIMD instructions are usually only provided for
     fixed-size integers.
   \item Trying to abort the scan before all bits are read. This is possible by
     modifying the storage format and performing the comparison of a word on
@@ -419,11 +419,11 @@ The horizontal form is based on ``SIMD within a register'' (SWAR) as first
 described by Leslie Lamport in 1975 \cite{SWAR}. The data is stored
 contiguously, similar to the format \simdscan{} uses, except that a stop bit is
 added between every element, thus adding memory overhead. An example is shown in
-Figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed but
+Figure~\ref{fig:bwh}. To perform a scan on this data it is not decompressed, but
 the arithmetic primitives used to do a comparison are decomposed and directly
 applied to the compressed data. This approach is different from \simdscan{}.
 
-As \emph{BitWeaving/H} provides no significant advantage over \simdscan{} but
+As \emph{BitWeaving/H} provides no significant advantage over \simdscan{}, but
 adds additional memory overhead it was not taken into consideration. Knuth
 suggests in \cite{SWAR} that the additional bit can be avoided by adding more
 arithmetic operations, it is however unlikely that this will make
@@ -433,7 +433,7 @@ arithmetic operations, it is however unlikely that this will make
 Not reading all the data is the primary advantage of the other flavor of
 \emph{BitWeaving}, \bwv{}. This format uses a vertical format first suggested in
 \cite{oneill}. The individual bits of a word in the column are no longer stored
-together but distributed over many words. In memory this means that the most
+together, but distributed over many words. In memory this means that the most
 significant bits of all words are stored first, followed by the second-most
 significant bits and so on as seen in Figure~\ref{fig:bwv}. Scans are still
 implemented using a SWAR method on a bit-wise level. The difference is now that
@@ -467,8 +467,8 @@ locations, reading it becomes a lot slower.
 \section{\bs{}}
 
 \bs{} \cite{ByteSlice} can be seen as a hybrid between vertical and horizontal
-bit packing formats. It is very similar to the \bwv{} format but does not
-distribute individual bits over multiple locations but only distributes bytes.
+bit packing formats. It is very similar to the \bwv{} format, but does not
+distribute individual bits over multiple locations. It only distributes bytes.
 Intel's SIMD extensions have very efficient instructions for byte-level
 comparisons and permutations so this avoids complexity in the scan loop.
 
@@ -486,20 +486,20 @@ prune after quantities of eight bits have been processed. This is only partially
 true though, because \bs{} contains fewer values per vector word so early pruning
 is more likely to occur, a single value in a vector word in either format can
 prevent early exiting. The grouping in \bwv{} also reduces the early pruning
-opportunities but this can also be applied to \bs{}. However, \bs{} group sizes
+opportunities, but this can also be applied to \bs{}. However, \bs{} group sizes
 are always a multiple of eight.
 
 The storage of bytes also comes at a cost of flexibility. \bwv{} can easily
 store any bit width with no memory lost to overhead bits. \bs{} is limited to
 multiples of eight, all other bit widths add more complexity. One solution is to
 pad to the next multiple of eight with zeros. For example a column of eleven bit
-values is padded to 16 bit values, adding three bits of overhead as shown in
+values is padded to 16-bit values, adding three bits of overhead as shown in
 Figure~\ref{fig:bseleven}. In the worst case this can add up to seven bits of
 overhead per value. This is clearly a disadvantage when the scan is limited by
 memory bandwidth. Another solution would be to store as many bytes as possible
 and switch to the \bwv{} format for the remaining bits. For eleven bit values
 this would be one byte in \bs{} and three bit in \bwv{}. This also has zero
-memory overhead but increases the complexity of the scan by splitting it into
+memory overhead, but increases the complexity of the scan by splitting it into
 two stages.
 
 \begin{figure}[h] \begin{center}
@@ -521,7 +521,7 @@ terms of instructions executed. However, these methods can extract additional
 advantages by using a more sophisticated memory layout to avoid reading all bits
 from memory and thus saving precious memory bandwidth.
 
-\bwv{} and \bs{} are very similar in their basic idea and behavior but differ in
+\bwv{} and \bs{} are very similar in their basic idea and behavior, but differ in
 details. This affects the number of branches executed, the probability of early
 pruning and the complexity of bringing data into the scan representation and
 vice-versa. This justifies a separate analysis of both approaches.

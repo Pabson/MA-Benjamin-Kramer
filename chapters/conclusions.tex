@@ -30,7 +30,7 @@ the input data, which makes the scan less predictable.
 
 While analyzing the behavior of \bwv{} another extremely important observation
 was made. Since a modern processor always loads data from RAM in constant-sized
-cache lines only skipping a cache line in its entirety can avoid loading data
+cache lines, only skipping a cache line in its entirety can avoid loading data
 from main memory. In theory, the probability of early exiting depends on the
 number of elements processed at the same time, and thus the register size. A
 single element can trigger the worst case of loading all bits and the
@@ -47,12 +47,12 @@ difference in scan runtime and in between the pruning scans are actually slower
 than \simdscan{}. This is due to the branching overhead incurred by pruning
 early and makes it much harder to make a clear recommendation.
 
-While inequality predicates such as less than and greater than show little to
-none sensitivity on the selectivity, equality predicate performance is directly
-bound to the selectivity. The selectivities where early pruning becomes
-significant for those predicates lie at $0.2\,\%$ for \bwv{} and $1.6\,\%$ for
-\bs{} which is very low. For this use case pruning algorithms have very little
-advantage over \simdscan{}.
+While inequality predicates such as \emph{less than} and \emph{greater than}
+show little to none sensitivity on the selectivity, equality predicate
+performance is directly bound to the selectivity. The selectivities where early
+pruning becomes significant for those predicates lie at $0.2\,\%$ for \bwv{} and
+$1.6\,\%$ for \bs{} which is very low. For this use case, pruning algorithms have
+very little advantage over \simdscan{}.
 
 In early pruning also lies the major difference in scan performance between
 \bwv{} and \bs{}. \bs{} stores fewer elements per cache line so the early
@@ -87,7 +87,7 @@ thousand elements per block) perform a few percent better than a full column
 scan for less than eight columns. For more columns the processor fails to
 recognize the scan and performance becomes extremely bad. This effect goes away
 for larger block sizes as the tested block size of $2^{17}$. The performance
-advantage stays though. All in all block-wise scanning is only recommended if
+advantage stays though. All in all, block-wise scanning is only recommended if
 it can be easily implemented in the data base system as the gains are rather
 small.
 

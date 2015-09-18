@@ -506,9 +506,9 @@ column which is scanned many times, unpacking is necessary to materialize the
 results. This can be circumvented by keeping the data available in multiple
 formats, one optimized for scanning and another optimized for unpacking, but
 this obviously requires twice the amount of memory.
-Figure~\ref{fig:eval:packunpack} shows packing of 32 bit values into the scan
+Figure~\ref{fig:eval:packunpack} shows packing of 32-bit values into the scan
 representation of various sizes and the reverse, unpacking the scan
-representation back into 32 bit values. For \simdscan{} at bit width 32 both
+representation back into 32-bit values. For \simdscan{} at bit width 32 both
 operations are equivalent to \texttt{memcpy}, performing a verbatim copy and not
 modifying the data at all.
 
@@ -551,7 +551,7 @@ modifying the data at all.
 \end{tikzpicture}
 \ref*{leg:packunpack}
 \end{center}
-\caption{Packing 32 bit values into \simdscan{}, \bwv{} and \bs{}
+\caption{Packing 32-bit values into \simdscan{}, \bwv{} and \bs{}
 representations and the reverse. 256 values were transformed at a time.}
 \label{fig:eval:packunpack}
 \end{figure}
@@ -563,7 +563,7 @@ done much more efficiently with shifts and vector shuffles. It should also be
 noted that packing is more expensive than unpacking in this scenario.
 
 For \simdscan{} and \bs{} runtime is extremely close to the speed of memory as
-seen in the 32 bit case of packing. The difference in performance between the
+seen in the 32-bit case of packing. The difference in performance between the
 two is mostly due to the \bs{} packing algorithm making use of SIMD while the
 others were implemented using scalar 32 or 64 bit integers. There is still more
 potential for optimization here.
@@ -584,7 +584,7 @@ exactly the same behavior.
   \item Block size $1$. This is equivalent to a row-wise scan. One element is read
     from the first column, compared and then the next column is processed before
     eventually advancing to the next row. For this test a scalar loop was used
-    as the other methods have minimum block sizes because of their SIMD usage.
+    as the other methods have minimum block sizes, because of their SIMD usage.
   \item Block size $256$. This is the native width of \bwv{} using AVX~2.
   \item Block size $1024$. Picked to see if using the native width has an
     positive or negative impact.
@@ -600,7 +600,7 @@ cache and since the bit vectors are permanently overwritten it is very unlikely
 for them to be evicted from cache.
 
 First a word on block size $1$. Tests showed that this method was not
-competitive at all with the other sizes because it inhibits using SIMD
+competitive at all with the other sizes, because it inhibits using SIMD
 instructions. Testing showed a slow down of more than $10\times$. Using this
 method is not recommended for any type of scan.
 
@@ -650,7 +650,7 @@ method is not recommended for any type of scan.
 
 The graph in Figure~\ref{fig:eval:bwvblocks4} compares block sizes $256$
 and $1024$ with an infinite block size. There is a small performance benefit of
-this method but it is not very pronounced, as calculated in
+this method, but it is not very pronounced, as calculated in
 Chapter~\ref{chapter:analysis}. What does not match the analysis is that the
 bit width has virtually no effect on the performance difference even though the
 percentage of saved memory bandwidth is much higher for small bit widths. This
@@ -700,8 +700,8 @@ effect is most likely due to cache effects.
 \label{fig:eval:bwvblocks16}
 \end{figure}
 
-Figure~\ref{fig:eval:bwvblocks16} shows the same scan but this time the data was
-distributed over 16 columns. This has a catastrophic effect on scan performance
+Figure~\ref{fig:eval:bwvblocks16} shows the same scan, but this time the data was
+distributed over 16 columns. This has a catastrophic effect on scan performance,
 because the memory prefetching of the used Haswell CPU cannot cope with this
 many streams, effectively removing the performance advantage of sequential
 access. The amount of written data is much lower for this test case though. In
@@ -782,7 +782,7 @@ was done on that data.
     Large enough to make \bwv{} slower than \simdscan{} for some bit widths.
   \item \emph{Is the early pruning probability difference of \bwv{} and \bs{}
     visible in practice?}\\
-    It is visible when measuring the amount of memory read from DRAM but in this
+    It is visible when measuring the amount of memory read from DRAM, but in this
     implementation it was not faster than \bwv{}. \bs{} has other advantages
     over \bwv{} and it is not unlikely that \bs{} can gain ground on \bwv{} on
     the next generation of Intel hardware or with a better tuned implementation.
