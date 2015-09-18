@@ -2,9 +2,10 @@
 In recent years, hardware characteristics, software systems, and application
 patterns have all changed in a way that emphasizes the importance of scan tasks
 in modern main-memory database systems. Main memory is available cheaply and
-can hold significant amounts of data. In-memory computing has matured and has
-resulted in key business platforms such as SAP HANA. Expectations for ad hoc
-querying defeat the use of pre-built index structures and mandate scans instead.
+can hold significant amounts of data nowadays. In-memory computing has matured
+and has resulted in key business platforms such as SAP HANA. Expectations for
+ad-hoc querying defeat the use of pre-built index structures and mandate scans
+instead.
 
 At the same time, it is still unclear how the latest advances on the hardware
 side can best be leveraged to support efficient scans. Growing SIMD widths, for
@@ -21,5 +22,28 @@ are explored by skipping parts of the input efficiently and by reducing the
 output size by handling intermediate results more efficiently.
 
 \vspace{2cm}\noindent
+
+In den vergangenen Jahren haben sich Hard- und Software sowie die Anforderungen
+an die Software so geändert, dass der Scan~--~das durchsuchen einer Spalte in
+einer Datenbank~--~in In-Memory-Datenbanken immer wichtiger wird. Hauptspeicher
+ist günstig und kann heute große Mengen an Daten halten. In-Memory-Datenbanken
+sind verbreitet und ausgereift und werden an Schlüsselstellen in der Wirtschaft
+verwendet, wie etwa SAP HANA. Die Anforderungen an diese Datenbanken können oft
+nicht durch vorberechnete Indices erfüllt werden und benötigen anstelle dessen
+Scans.
+
+Gleichwohl ist es immer noch unklar wie man die neusten Errungenschaften in der
+Hardware am besten für diese Scans nutzen kann. Breitere SIMD-Register zum
+Beispiel, könnten theoretisch eine Beschleunigung um das 16-fache erreichen.
+Aber bestehende Scan-Methoden sind nicht auf solch breite Register vorbereitet.
+Selbst für kleinere SIMD-Breiten ist es nicht klar wie Prädikate mit mehreren
+Datentypen am effizientesten realisiert werden können.
+
+Diese Masterarbeit beschäftigt sich mit Methoden, die diese moderne Hardware
+ausnutzen um Scans zu Beschleunigung, mit einem Fokus auf \simdscan{},
+\emph{BitWeaving} und \bs{}. Vom Startpunkt des \simdscan{} werden weitere
+Möglichkeiten untersucht um die benötigte Speicherbandbreite zu reduzieren, zum
+Beispiel durch Überspringen von Teilen der Eingabe oder durch Reduzierung der
+Ausgabemenge durch effizientere Verwaltung von Zwischenergebnissen.
 
 \end{abstract}
