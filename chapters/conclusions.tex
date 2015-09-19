@@ -55,9 +55,9 @@ $1.6\,\%$ for \bs{} which is very low. For this use case, pruning algorithms hav
 very little advantage over \simdscan{}.
 
 In early pruning also lies the major difference in scan performance between
-\bwv{} and \bs{}. \bs{} stores fewer elements per cache line so the early
+\bwv{} and \bs{}. \bs{} stores fewer elements per cache line, so the early
 pruning probability is higher. On the other hand, it also executes more
-branches per word read from memory so the branching overhead is higher. In this
+branches per word read from memory, so the branching overhead is higher. In this
 thesis \bs{} could not beat \bwv{} in terms of scan performance. The effect is
 more pronounced for complex predicates such as \textsc{Between} than for
 simpler predicates such as equivalence, mostly due to AVX~2 missing important

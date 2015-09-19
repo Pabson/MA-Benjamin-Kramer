@@ -141,13 +141,13 @@ Figure~\ref{fig:earlypruningprobabilities}.
 For both \bwv{} and \bs{} there can be a significant performance penalty due to
 branch mispredictions in the early pruning code if pruning triggers irregularly.
 Attempting to prune too early will be unsuccessful, or hit an area where the
-probability is too low so branch mispredictions will eliminate any performance
+probability is too low, so branch mispredictions will eliminate any performance
 advantage from the saved memory bandwidth.  In the range of bit widths between 1
 and 32 bits, the most mispredictions will occur for code widths between 8 and 16
 bits as the probabilities are not close to $0\,\%$ or $100\,\%$. This can
 severely impact the runtime of the scan. To reduce this effect, \bwv{}
 partitions the bits into groups and only after a full group has been processed
-the pruning branch is executed. \bs{} has an intrinsic group size of eight so no
+the pruning branch is executed. \bs{} has an intrinsic group size of eight, so no
 additional handling is needed, but it is also less flexible. The intrinsic group
 size does not have an effect on early pruning probabilities -- the pruning
 decision is only postponed -- but reduces the amount of memory pruned away.
@@ -275,7 +275,7 @@ the next column. This is repeated for all columns, the final result is written
 and the scan advances to the next set of blocks.
 
 The bus between the processor and main memory is not capable of full duplex
-operation so any reduction in write bandwidth counts directly towards the total
+operation, so any reduction in write bandwidth counts directly towards the total
 bandwidth. The reduction is particularly significant for small bandwidths, for
 example for a four-bit scan of two columns the total bandwidth would be ten
 bits, eight read and two written. Block-wise scanning reduces this to nine

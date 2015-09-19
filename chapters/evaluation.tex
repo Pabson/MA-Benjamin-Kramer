@@ -98,7 +98,7 @@ different parts.
   over multiple iterations. This skews the result, however there is virtually
   no difference in scan performance between \simdscan{} and \bwv{}. Early
   pruning can theoretically abort the scan after four or eight bits but the
-  probability calculated in Chapter~\ref{chapter:analysis} is very low so no
+  probability calculated in Chapter~\ref{chapter:analysis} is very low, so no
   effect is observed.
   \item Bit widths $8-12$: as calculated earlier and visible in the memory
   graph early pruning is still not effective here. The overhead of the additional
@@ -107,7 +107,7 @@ different parts.
   these common bit widths.
   \item Bit widths $12-20$: Early pruning starts to become more effective and
   less memory is loaded from DRAM. The early pruning overhead is clearly
-  visible and yields a slower runtime than \simdscan{} so its still preferable
+  visible and yields a slower runtime than \simdscan{}, so its still preferable
   over \bwv{}.
   \item Bit width $20-32$: Early pruning is very effective and beats the
   runtime of \simdscan{} with a growing margin. The performance curve is
@@ -200,7 +200,7 @@ can be clearly seen that \bs{} is not memory bound in this benchmark. Even
 though the pruning works better for case $24$ the runtime performance is much
 worse. The gap can be reduced by using a simpler predicate, for example in
 Figure~\ref{fig:eval:equalbig} an equality predicate was used.  The equality
-predicate is a small subset of the range predicate so the amount of arithmetic
+predicate is a small subset of the range predicate, so the amount of arithmetic
 performed during the scan is significantly lower.  While much narrower, even this
 was not enough to eliminate the performance advantage of \bwv{} over \bs{}. A
 possible explanation for this behavior is the increased number of branch
@@ -430,7 +430,7 @@ between $100\,\%$ and $0\,\%$.}
   \item When the same amount of data is read, the performance of \bwv{} tends to
     be almost identical to \simdscan{}. On the one hand, the equality predicate
     requires very little arithmetic work compared to the range predicate shown
-    earlier. On the other hand early pruning does not work well so the early exit
+    earlier. On the other hand early pruning does not work well, so the early exit
     branch can be easily predicted by the hardware.
   \item Early pruning is more effective for \bs{} than for \bwv{}, but
     performance tends to be slightly worse. The implementation of \bs{} is not
@@ -570,7 +570,7 @@ potential for optimization here.
 
 In conclusion it is certainly feasible to use the in-memory representation of
 \simdscan{} or \bs{} as the storage format for both scanning and extraction of
-values, unpacking from \bwv{} is prohibitively expensive so its usage is
+values, unpacking from \bwv{} is prohibitively expensive, so its usage is
 restricted to being an index.
 
 \section{Adding Block-Wise Scanning}
@@ -799,6 +799,6 @@ was done on that data.
   \item \emph{Are there visible improvements due to the bandwidth reduction of
     block-wise scanning?}\\
     Yes. There is a small but visible effect. Making the block size too small
-    can regress performance though so a large block size is better as long as
+    can regress performance though, so a large block size is better as long as
     the intermediate bit vectors comfortably fit in cache.
 \end{enumerate}

@@ -63,7 +63,7 @@ in advance. Because the next block is read in the background the latency is
 invisible to the user. This so-called prefetching strategy is the only way high
 bandwidth can be achieved with this kind of dynamic memory. Common methods to
 accelerate accesses in database systems, such as trees and hash tables, use a
-memory access pattern that cannot take advantage of prefetching so a different
+memory access pattern that cannot take advantage of prefetching, so a different
 approach is needed.
 
 \section{SIMD}
@@ -119,10 +119,10 @@ instruction-level parallelism the latency and throughput of normal instructions
 has to be taken into account. In Table~\ref{tab:latencies} the latencies and
 throughput for loads and additions are shown. Now imagine a loop creating a sum
 over 32-bit values; requiring a load and an add. All instructions are fully
-pipelined so we can load two 32-bit integers and perform two additions per
+pipelined, so we can load two 32-bit integers and perform two additions per
 cycle, the full throughput is not achievable, because we cannot load more than
 two values. Now we change the loop to work on 256-bit vectors, the load
-throughput does not change with size so we can load 16 32-bit integers per cycle
+throughput does not change with size, so we can load 16 32-bit integers per cycle
 and still perform 2 full adds, adding all 16 integers. In theory we now
 increased the throughput eightfold. In practice the performance will be bound by
 memory latency though, unless the number of arithmetic instructions is
@@ -453,7 +453,7 @@ column is partitioned into a fixed amount of groups. This can be imagined as
 first storing the four most significant of all words first, in the vertical
 format. This forms the first partition or group. Then the fifth to eighth
 significant bits are stored in the next group and so on. Early pruning is
-performed after a full group is processed so the processor can take advantage of
+performed after a full group is processed, so the processor can take advantage of
 the sequential access without any interruption. This also reduces the likeliness
 of mispredicted branches as the total number of early pruning branches is
 reduced.
@@ -470,7 +470,7 @@ locations, reading it becomes a lot slower.
 bit packing formats. It is very similar to the \bwv{} format, but does not
 distribute individual bits over multiple locations. It only distributes bytes.
 Intel's SIMD extensions have very efficient instructions for byte-level
-comparisons and permutations so this avoids complexity in the scan loop.
+comparisons and permutations, so this avoids complexity in the scan loop.
 
 This byte-level vertical format has several advantages over the bit-level
 vertical format. Packing and unpacking \bs{}d data only has to touch one eighth
@@ -483,7 +483,7 @@ the \bwv{} format while still providing early pruning opportunities.
 When comparing early pruning, it might seem like \bwv{} provides better pruning
 opportunities as aborting is possible after every bit in theory. \bs{} can only
 prune after quantities of eight bits have been processed. This is only partially
-true though, because \bs{} contains fewer values per vector word so early pruning
+true though, because \bs{} contains fewer values per vector word, so early pruning
 is more likely to occur, a single value in a vector word in either format can
 prevent early exiting. The grouping in \bwv{} also reduces the early pruning
 opportunities, but this can also be applied to \bs{}. However, \bs{} group sizes

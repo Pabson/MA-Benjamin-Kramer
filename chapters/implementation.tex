@@ -285,7 +285,7 @@ most significant bytes are in the first 64 bits of the vector. Then up to four
 64 bit integers are extracted from that vector and stored at the corresponding
 positions in the output buffer. This only touches five memory locations, reading
 from one and storing to four at the maximum bit width of 32 bits. All accesses
-are sequential so it should perform very well on modern hardware.
+are sequential, so it should perform very well on modern hardware.
 
 The code in Algorithm~\ref{algo:packbs} shows the basic packing method. A 256
 bit vector is loaded and vector shuffles are used to group the vector elements
