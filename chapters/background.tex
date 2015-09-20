@@ -81,7 +81,7 @@ vector register, the individual values in the operands can be processed in
 parallel as far as resources permit. So processing a 64-element vector can take
 significant less than 64 cycles. Load operations typically gather values that
 can be scattered throughout memory into a single register and load operations
-have to disperse the values back into memory. By this approach a vector
+have to disperse the values back into memory. By this approach a CPU with a vector
 instruction set can perform the same operations while executing dramatically
 fewer instructions than an architecture that operates on a single value at a
 time. This frees up instruction decoding resources that can be repurposed to
@@ -463,7 +463,7 @@ switching from row-wise to column-wise storage. Again, this is a trade-off
 between scan performance and the amount of work necessary to extract a row from
 the storage. As the bits of a single value are now distributed over many memory
 locations, reading it becomes a lot slower.
-
+\newpage
 \section{\bs{}}
 
 \bs{} \cite{ByteSlice} can be seen as a hybrid between vertical and horizontal

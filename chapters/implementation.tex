@@ -180,7 +180,7 @@ instructions could improve the situation.
     \For {$j=0$ to $32$}
       \State Bits $\gets$ load one 256-bit word from in
       \For {$k=0$ to width}
-        \State Mask $\gets$ movemask(Bits << (32 - j)) \Comment{Extract 8 bits}
+        \State Mask $\gets$ movemask($Bits << (32 - j)$) \Comment{Extract 8 bits}
         \State Store Mask to the right position in \textbf{out}
       \EndFor
     \EndFor
